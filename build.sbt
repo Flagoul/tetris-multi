@@ -10,8 +10,7 @@ lazy val server = (project in file("server")).settings(
   libraryDependencies ++= Seq(
     "com.vmunier" %% "scalajs-scripts" % "latest.release",
     specs2 % Test
-  ),
-  EclipseKeys.preTasks := Seq(compile in Compile)
+  )
 ).enablePlugins(PlayScala).
   dependsOn(sharedJvm)
 
