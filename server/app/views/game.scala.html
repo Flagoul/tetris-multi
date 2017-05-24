@@ -1,10 +1,8 @@
 @main("Play with Scala.js") {
-<div id="user-game" class="game-container">
-    <canvas class="game" width="500" height="500">
-
-    </canvas>
-    <div class="game-info">
-        Hello there
+    <div id="games" class="container-fluid">
+        <div class="row">
+            @gamebox("user-game-box")
+            @gamebox("opponent-game-box")
+        </div>
     </div>
-</div>
 }
