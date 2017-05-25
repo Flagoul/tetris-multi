@@ -1,26 +1,45 @@
-.game-box {
+.square {
+    position: relative;
+
     border: 2px solid grey;
     border-radius: 5px;
-
-    margin: 10px;
 }
 
-.game-box:after {
+.square:after {
     content: "";
     display: block;
     padding-bottom: 100%;
 }
 
-.game-box > .row {
+.square > * {
     position: absolute;
     width: 100%;
     height: 100%;
+}
 
-    font-size: 2vw;
+.game-box {
+    margin: 10px;
 }
 
 .game-info {
     padding-top: 5px;
-
     border-left: 1px solid grey;
+    font-size: 2vw;
+}
+
+.next-piece-title {
+    display: block;
+    margin: 0;
+    text-align: center;
+}
+
+.next-piece-title > p {
+    font-size: 1.7vw;
+    margin-bottom: -10px;
+}
+
+.next-piece-preview {
+    display: block;
+    margin: 10%;
+    padding: 0;
 }
