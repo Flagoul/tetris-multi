@@ -1,10 +1,17 @@
 @(boxId: String)
 
-<div id="@boxId" class="game-container container col">
+<div id="@boxId" class="game-box container col square">
     <div class="row">
-        <canvas class="game col" width="500" height="500"></canvas>
-        <div class="game-info col">
-            Hello there
+        <canvas class="game col-8"></canvas>
+        <div class="game-info col-4 container">
+            <div class="row">
+                <span class="col-8">Test</span>
+                <span class="col-4">3</span>
+            </div>
+            <div class="row">
+                <span class="col-8">Test</span>
+                <span class="col-4">4</span>
+            </div>
         </div>
     </div>
 </div>

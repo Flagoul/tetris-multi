@@ -1,13 +1,18 @@
-@(title: String)(content: Html)
+@(title: String, stylesheets: Html = Html(""), scripts: Html = Html(""))(content: Html)
 
 <!DOCTYPE html>
 
 <html>
 <head>
     <title>@title</title>
+
+    <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
+
     <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/main.css")">
     <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap.min.css")">
-    <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
+    @stylesheets
+
+    @scripts
 </head>
 <body>
    @content

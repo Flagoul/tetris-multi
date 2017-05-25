@@ -1,4 +1,8 @@
-@main("Play with Scala.js") {
+@stylesheets = {
+    <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/game.css")">
+}
+
+@main("Play with Scala.js", stylesheets = stylesheets) {
     <div id="games" class="container-fluid">
         <div class="row">
             @gamebox("user-game-box")
