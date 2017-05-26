@@ -21,6 +21,10 @@
     margin: 10px;
 }
 
+.game {
+    padding: 0px;
+}
+
 .game-info {
     padding-top: 5px;
     border-left: 1px solid grey;
