@@ -11,11 +11,11 @@ class GridCanvas(rows: Int, cols: Int, canvas: Canvas) {
     canvas.height = canvas.scrollHeight
     canvas.width = canvas.scrollWidth
 
-    val rowStep = canvas.height / rows
-    val colStep = canvas.width / cols
+    val rowStep = canvas.height.toFloat / rows
+    val colStep = canvas.width.toFloat / cols
 
     ctx.strokeStyle = "#bbb"
-    ctx.lineWidth = 0.5
+    ctx.lineWidth = 0.2
 
     for (i <- 1 to rows) {
       val y = i * rowStep
