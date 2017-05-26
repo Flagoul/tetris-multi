@@ -18,17 +18,21 @@
 }
 
 .game-box {
-    margin: 10px;
+    margin: 2vw;
+}
+
+.game-box:after {
+    padding-bottom: 155%;
 }
 
 .game {
-    padding: 0px;
+    padding: 0;
 }
 
 .game-info {
     padding-top: 5px;
     border-left: 1px solid grey;
-    font-size: 2vw;
+    font-size: 1.5vw;
 }
 
 .next-piece-title {

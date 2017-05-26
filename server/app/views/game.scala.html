@@ -3,10 +3,16 @@
 }
 
 @main("", stylesheets = stylesheets) {
-    <div id="games" class="container-fluid">
+    <div class="container">
         <div class="row">
-            @gamebox("user-game-box")
-            @gamebox("opponent-game-box")
+            <div class="col-1"></div>
+            <div id="games" class="col-10 container-fluid">
+                <div class="row">
+                    @gamebox("user-game-box")
+                    @gamebox("opponent-game-box")
+                </div>
+            </div>
+            <div class="col-1"></div>
         </div>
     </div>
 }
