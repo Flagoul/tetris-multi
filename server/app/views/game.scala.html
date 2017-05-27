@@ -1,0 +1,18 @@
+@stylesheets = {
+    <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/game.css")">
+}
+
+@main("", stylesheets = stylesheets) {
+    <div class="container">
+        <div class="row">
+            <div class="col-1"></div>
+            <div id="games" class="col-10 container-fluid">
+                <div class="row">
+                    @gamebox("user-game-box")
+                    @gamebox("opponent-game-box")
+                </div>
+            </div>
+            <div class="col-1"></div>
+        </div>
+    </div>
+}

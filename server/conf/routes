@@ -19,3 +19,5 @@ PUT     /account                    controllers.Account.update
 DELETE  /account                    controllers.Account.delete
 
 GET     /stats                      controllers.Stats.index
+
+GET     /game                       controllers.Game.index
