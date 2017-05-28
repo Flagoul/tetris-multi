@@ -1,12 +1,16 @@
 package example.game
 
 import scala.util.Random
+import scala.scalajs.js.timers.setInterval
 
 class Game {
   val nGameRows: Int = 22
   val nGameCols: Int = 10
   val nNextPieceRows: Int = 5
   val nNextPieceCols: Int = 5
+
+  // FIXME temporary: should change with time
+  val gameSpeed: Int = 500
 
   // A position in a grid on the form (row, col)
   type Position = (Int, Int)
@@ -36,7 +40,26 @@ class Game {
     piecePositions(shape, (nNextPieceRows / 2 - shape.length / 2 , nNextPieceCols / 2 - shape.head.length / 2))
   }
 
-  def move(piece: Piece, positions: List[Position]): Unit = ???
+  def fall(gameGrid: Array[Array[Boolean]], positions: List[Position]): List[Position] = {
+    val newPositions: List[Position] = positions.map(p => (p._1 + 1, p._2))
+
+    // piece collided with bottom or other piece
+    if (newPositions.exists(p => p._1 >= nGameRows || (gameGrid(p._1)(p._2) && !positions.contains(p)))) {
+      return List()
+    }
+
+    // remove old blocks
+    for (p <- positions) {
+      gameGrid(p._1)(p._2) = false
+    }
+
+    // add new blocks
+    for (p <- newPositions) {
+      gameGrid(p._1)(p._2) = true
+    }
+
+    newPositions
+  }
 
   def run(): Unit = {
     val userGB: GameBox = new GameBox("user-game-box", nGameRows, nGameCols, nNextPieceRows, nNextPieceCols)
@@ -52,9 +75,7 @@ class Game {
     var nextPiece: Piece = randomPiece()
 
     var positions: List[Position] = initGamePiecePositions(piece)
-    val npPositions: List[Position] = nextPiecePositions(nextPiece)
-
-    // TODO: tons of things here: move piece, handle rotate, redraw, ...
+    var npPositions: List[Position] = nextPiecePositions(nextPiece)
 
     for (pos <- positions) {
       gameGrid(pos._1)(pos._2) = true
@@ -64,12 +85,34 @@ class Game {
       nextPieceGrid(pos._1)(pos._2) = true
     }
 
-    userGB.drawGame(gameGrid)
-    userGB.drawNextPiece(nextPieceGrid)
+    setInterval(gameSpeed) {
+      userGB.drawGame(gameGrid)
+      userGB.drawNextPiece(nextPieceGrid)
 
-    opponentBG.drawGame(opponentGameGrid)
-    opponentBG.drawNextPiece(opponentNextPieceGrid)
+      opponentBG.drawGame(opponentGameGrid)
+      opponentBG.drawNextPiece(opponentNextPieceGrid)
 
-    println("Game launched")
+      positions = fall(gameGrid, positions)
+
+      if (positions.isEmpty) {
+        piece = nextPiece
+        nextPiece = randomPiece()
+
+        for (pos <- npPositions) {
+          nextPieceGrid(pos._1)(pos._2) = false
+        }
+
+        positions = initGamePiecePositions(piece)
+        npPositions = nextPiecePositions(nextPiece)
+
+        for (pos <- positions) {
+          gameGrid(pos._1)(pos._2) = true
+        }
+
+        for (pos <- npPositions) {
+          nextPieceGrid(pos._1)(pos._2) = true
+        }
+      }
+    }
   }
 }
