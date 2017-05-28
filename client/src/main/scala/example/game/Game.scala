@@ -48,17 +48,16 @@ class Game {
       return List()
     }
 
-    // remove old blocks
-    for (p <- positions) {
-      gameGrid(p._1)(p._2) = false
-    }
-
-    // add new blocks
-    for (p <- newPositions) {
-      gameGrid(p._1)(p._2) = true
-    }
+    updateGridAtPositions(gameGrid, positions, false)
+    updateGridAtPositions(gameGrid, newPositions, true)
 
     newPositions
+  }
+
+  def updateGridAtPositions(grid: Array[Array[Boolean]], positions: List[Position], value: Boolean): Unit = {
+    for (pos <- positions) {
+      grid(pos._1)(pos._2) = value
+    }
   }
 
   def run(): Unit = {
@@ -77,13 +76,8 @@ class Game {
     var positions: List[Position] = initGamePiecePositions(piece)
     var npPositions: List[Position] = nextPiecePositions(nextPiece)
 
-    for (pos <- positions) {
-      gameGrid(pos._1)(pos._2) = true
-    }
-
-    for (pos <- npPositions) {
-      nextPieceGrid(pos._1)(pos._2) = true
-    }
+    updateGridAtPositions(gameGrid, positions, true)
+    updateGridAtPositions(nextPieceGrid, npPositions, true)
 
     setInterval(gameSpeed) {
       userGB.drawGame(gameGrid)
@@ -98,20 +92,13 @@ class Game {
         piece = nextPiece
         nextPiece = randomPiece()
 
-        for (pos <- npPositions) {
-          nextPieceGrid(pos._1)(pos._2) = false
-        }
+        updateGridAtPositions(nextPieceGrid, npPositions, false)
 
         positions = initGamePiecePositions(piece)
         npPositions = nextPiecePositions(nextPiece)
 
-        for (pos <- positions) {
-          gameGrid(pos._1)(pos._2) = true
-        }
-
-        for (pos <- npPositions) {
-          nextPieceGrid(pos._1)(pos._2) = true
-        }
+        updateGridAtPositions(gameGrid, positions, true)
+        updateGridAtPositions(nextPieceGrid, npPositions, true)
       }
     }
   }
