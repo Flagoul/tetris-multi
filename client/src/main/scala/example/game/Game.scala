@@ -1,41 +1,68 @@
 package example.game
 
+import scala.util.Random
+
 class Game {
-  def randomPiece(): Piece = {
-    Square // FIXME temporary
+  val nGameRows: Int = 22
+  val nGameCols: Int = 10
+  val nNextPieceRows: Int = 5
+  val nNextPieceCols: Int = 5
+
+  // A position in a grid on the form (row, col)
+  type Position = (Int, Int)
+
+  def randomPiece(): Piece = Random.shuffle(List(Bar, InvL, L, S, Square, T, Z)).head
+
+  def piecePositions(pieceShape: Array[Array[Boolean]], drawPos: Position): List[Position] = {
+    val pieceWidth = pieceShape.head.length
+    val pieceHeight = pieceShape.length
+
+    val positions = for {
+      row <- 0 until pieceHeight
+      col <- 0 until pieceWidth
+      if pieceShape(row)(col)
+    } yield (drawPos._1 + row, drawPos._2 + col)
+
+    positions.toList
   }
 
-  def move(piece: Piece): Unit = {
-    ??? // TODO
+  def initGamePiecePositions(piece: Piece): List[Position] = {
+    val shape = piece.shape()
+    piecePositions(shape, (0, nGameCols / 2 - shape.head.length / 2))
   }
+
+  def nextPiecePositions(piece: Piece): List[Position] = {
+    val shape = piece.shape()
+    piecePositions(shape, (nNextPieceRows / 2 - shape.length / 2 , nNextPieceCols / 2 - shape.head.length / 2))
+  }
+
+  def move(piece: Piece, positions: List[Position]): Unit = ???
 
   def run(): Unit = {
-    // FIXME put these values elsewhere ?
-    val nGameRows: Int = 22
-    val nGameCols: Int = 10
-    val nNextPieceRows: Int = 5
-    val nNextPieceCols: Int = 5
-
     val userGB: GameBox = new GameBox("user-game-box", nGameRows, nGameCols, nNextPieceRows, nNextPieceCols)
     val opponentBG: GameBox = new GameBox("opponent-game-box", nGameRows, nGameCols, nNextPieceRows, nNextPieceCols)
 
     var gameGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
     var nextPieceGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
 
-    var curPiece: Piece = randomPiece()
-    var curRow: Int = 5 // FIXME
-    var nextPiece: Piece = randomPiece()
-
     var opponentGameGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
     var opponentNextPieceGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
 
+    var piece: Piece = randomPiece()
+    var nextPiece: Piece = randomPiece()
+
+    var positions: List[Position] = initGamePiecePositions(piece)
+    val npPositions: List[Position] = nextPiecePositions(nextPiece)
+
     // TODO: tons of things here: move piece, handle rotate, redraw, ...
 
-    // FIXME: draw piece instead
-    gameGrid(0)(5) = true
-    gameGrid(1)(5) = true
-    gameGrid(1)(6) = true
-    gameGrid(2)(6) = true
+    for (pos <- positions) {
+      gameGrid(pos._1)(pos._2) = true
+    }
+
+    for (pos <- npPositions) {
+      nextPieceGrid(pos._1)(pos._2) = true
+    }
 
     userGB.drawGame(gameGrid)
     userGB.drawNextPiece(nextPieceGrid)
