@@ -1,4 +1,4 @@
-package example.game
+package tetris.game
 
 abstract class Piece {
   def shape(): Array[Array[Boolean]]
@@ -56,6 +56,4 @@ object Z extends Piece {
     Array(false, true, true)
   )
 }
-
-
 

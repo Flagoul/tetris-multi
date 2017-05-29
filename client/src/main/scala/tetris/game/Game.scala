@@ -1,9 +1,10 @@
-package example.game
+package tetris.game
 
 import org.scalajs.dom
+import tetris.game.Types.Position
 
 import scala.util.Random
-import scala.scalajs.js.timers.{setInterval, clearInterval}
+import scala.scalajs.js.timers.setInterval
 
 class Game {
   val nGameRows: Int = 22
@@ -18,7 +19,7 @@ class Game {
   private val opponentGB: GameBox = new GameBox("opponent-game-box", nGameRows, nGameCols, nNextPieceRows, nNextPieceCols)
 
   // A position in a grid on the form (row, col)
-  type Position = (Int, Int)
+
 
   def randomPiece(): Piece = Random.shuffle(List(Bar, InvL, L, S, Square, T, Z)).head
 
@@ -65,11 +66,11 @@ class Game {
   }
 
   private def move(gameGrid: Array[Array[Boolean]], positions: List[Position],
-                   transform: Position => Position, inGridBorder: Position => Boolean): List[Position] = {
+                   transform: Position => Position, outOfBounds: Position => Boolean): List[Position] = {
     val newPositions: List[Position] = positions.map(transform)
 
-    // piece collided with bottom or other piece
-    if (newPositions.exists(p => inGridBorder(p) || (gameGrid(p._1)(p._2) && !positions.contains(p)))) {
+    // piece out of bounds or collided with other piece
+    if (newPositions.exists(p => outOfBounds(p) || (gameGrid(p._1)(p._2) && !positions.contains(p)))) {
       return List()
     }
 
@@ -104,14 +105,49 @@ class Game {
     )
   }
 
-  def fall(gameGrid: Array[Array[Boolean]], positions: List[Position]): Unit = {
-    // TODO do some animation
-    var newPositions = moveDown(gameGrid, positions)
+  def rotate(gameGrid: Array[Array[Boolean]], positions: List[Position], piece: Piece): List[Position] = piece match {
+    case Square => positions
+    case Bar => ???
+    case _ =>
+      // top left of a rect surrounding piece
+      val topLeft = positions.foldLeft((nGameRows, nGameCols))((a, b) => (Math.min(a._1, b._1), Math.min(a._2, b._2)))
+      println("topLeft", topLeft)
 
-    while (newPositions.nonEmpty) {
+      val bottomRight = positions.foldLeft((0, 0))((a, b) => (Math.max(a._1, b._1), Math.min(a._2, b._2)))
+
+      val width = bottomRight._2 - topLeft._2
+      val height = bottomRight._1 - topLeft._1
+
+      val orig = (
+        if (height == 2) topLeft._1 - 1 else topLeft._1,
+        if (width == 2) topLeft._2 - 1 else topLeft._2
+      )
+
+      // translating (0,0) to matrix top left and do right rotation surrounding piece then rotation
+      val newPositions = positions.map(p => {
+        val tRow = p._1 - orig._1
+        val tCol = p._2 - orig._2
+        (tCol + orig._1, 3 - tRow - 1 + orig._2)
+      })
+
+      def outOfBounds(pos: Position) = pos._1 < 0 || pos._1 >= nGameRows || pos._2 < 0 || pos._2 >= nGameCols
+
+      println("Positions")
+      positions.foreach(println(_))
+
+      println("New positions")
+      newPositions.foreach(println(_))
+
+      // piece out of bounds or collided with other piece
+      if (newPositions.exists(p => outOfBounds(p) || (gameGrid(p._1)(p._2) && !positions.contains(p)))) {
+        return List()
+      }
+
+      updateGridAtPositions(gameGrid, positions, false)
+      updateGridAtPositions(gameGrid, newPositions, true)
       userGB.drawGame(gameGrid)
-      newPositions = moveDown(gameGrid, newPositions)
-    }
+
+      newPositions
   }
 
   def updateGridAtPositions(grid: Array[Array[Boolean]], positions: List[Position], value: Boolean): Unit = {
@@ -163,13 +199,20 @@ class Game {
       } while (piecePositions.nonEmpty)
     }
 
+    def rotatePiece(): Unit = {
+      val positions = rotate(gameGrid, piecePositions, piece)
+      if (positions.nonEmpty) {
+        piecePositions = positions
+      }
+    }
+
     dom.window.onkeypress = { (e: dom.KeyboardEvent) =>
       println("key pressed", e.charCode)
       e.charCode match {
         case 97 => movePieceLeft()
         case 100 => movePieceRight()
         case 115 => movePieceDown()
-        // case 119 => rotate()
+        case 119 => rotatePiece()
       }
     }
 

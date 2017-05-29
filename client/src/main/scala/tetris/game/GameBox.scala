@@ -1,4 +1,4 @@
-package example.game
+package tetris.game
 
 import org.scalajs.dom
 import org.scalajs.dom.html.Canvas
