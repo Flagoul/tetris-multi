@@ -13,26 +13,21 @@ object Square extends Piece {
 
 object Bar extends Piece {
   def shape(): Array[Array[Boolean]] = Array(
-    Array(true),
-    Array(true),
-    Array(true),
-    Array(true)
+    Array(true, true, true, true)
   )
 }
 
 object L extends Piece {
   def shape(): Array[Array[Boolean]] = Array(
-    Array(true, false),
-    Array(true, false),
-    Array(true, true)
+    Array(true, true, true),
+    Array(true, false, false)
   )
 }
 
 object InvL extends Piece {
   def shape(): Array[Array[Boolean]] = Array(
-    Array(false, true),
-    Array(false, true),
-    Array(true, true)
+    Array(true, true, true),
+    Array(false, false, true)
   )
 }
 

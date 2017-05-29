@@ -51,8 +51,6 @@ class Game {
     (0, nGameCols / 2 - piece.shape().head.length / 2)
   ) {
 
-    //private var center: Position = ???
-
     private def move(transform: Position => Position, outOfBounds: Position => Boolean): Boolean = {
       val newPositions: List[Position] = positions.map(transform)
 
@@ -61,8 +59,8 @@ class Game {
         return false
       }
 
-      updateGridAtPositions(gameGrid, positions, false)
-      updateGridAtPositions(gameGrid, newPositions, true)
+      updateGridAtPositions(gameGrid, positions, value = false)
+      updateGridAtPositions(gameGrid, newPositions, value = true)
       userGB.drawGame(gameGrid)
 
       positions = newPositions
@@ -102,21 +100,14 @@ class Game {
       case Square => true
       case Bar => ???
       case _ =>
-        // top left of a rect surrounding piece
-        val topLeft = positions.foldLeft((nGameRows, nGameCols))((a, b) => (Math.min(a._1, b._1), Math.min(a._2, b._2)))
-        println("topLeft", topLeft)
+        // The position of the center of the piece; it is the axis of rotation.
+        // It is always the block at (0, 1) in the shape of the piece; to know the actual position we have to
+        // compute how many "true" they are in the first line of the shape and use it as index in the actual positions.
+        val center = positions(piece.shape().head.slice(0, 2).count(x => x) - 1)
 
-        val bottomRight = positions.foldLeft((0, 0))((a, b) => (Math.max(a._1, b._1), Math.min(a._2, b._2)))
+        val orig = (center._1 - 1, center._2 - 1)
 
-        val width = bottomRight._2 - topLeft._2
-        val height = bottomRight._1 - topLeft._1
-
-        val orig = (
-          if (height == 2) topLeft._1 - 1 else topLeft._1,
-          if (width == 2) topLeft._2 - 1 else topLeft._2
-        )
-
-        // translating (0,0) to matrix top left and do right rotation surrounding piece then rotation
+        // translating (0, 0) to matrix top left and do right rotation surrounding piece then rotation
         val newPositions = positions.map(p => {
           val tRow = p._1 - orig._1
           val tCol = p._2 - orig._2
@@ -136,9 +127,11 @@ class Game {
           return false
         }
 
-        updateGridAtPositions(gameGrid, positions, false)
-        updateGridAtPositions(gameGrid, newPositions, true)
+        updateGridAtPositions(gameGrid, positions, value = false)
+        updateGridAtPositions(gameGrid, newPositions, value = true)
         userGB.drawGame(gameGrid)
+
+        positions = newPositions
 
         true
     }
@@ -158,11 +151,11 @@ class Game {
   }
 
   def run(): Unit = {
-    var gameGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
-    var nextPieceGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
+    val gameGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
+    val nextPieceGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
 
-    var opponentGameGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
-    var opponentNextPieceGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
+    val opponentGameGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
+    val opponentNextPieceGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
 
     var currentPiece = randomPiece()
     var nextPiece: Piece = randomPiece()
@@ -193,7 +186,7 @@ class Game {
       val moved = piece.moveDown()
 
       if (!moved) {
-        updateGridAtPositions(nextPieceGrid, next.getPositions, false)
+        updateGridAtPositions(nextPieceGrid, next.getPositions, value = false)
 
         currentPiece = nextPiece
         nextPiece = randomPiece()
@@ -201,8 +194,8 @@ class Game {
         piece = new GamePiece(currentPiece, gameGrid)
         next = new NextPiece(nextPiece, nextPieceGrid)
 
-        updateGridAtPositions(gameGrid, piece.getPositions, true)
-        updateGridAtPositions(nextPieceGrid, next.getPositions, true)
+        updateGridAtPositions(gameGrid, piece.getPositions, value = true)
+        updateGridAtPositions(nextPieceGrid, next.getPositions, value = true)
 
         userGB.drawNextPiece(nextPieceGrid)
       }
