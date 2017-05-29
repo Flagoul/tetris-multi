@@ -56,4 +56,3 @@ object Z extends Piece {
     Array(false, true, true)
   )
 }
-
