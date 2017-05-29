@@ -8,7 +8,8 @@ GET     /assets/*file               controllers.Assets.versioned(path="/public",
 # Home page
 GET     /                           controllers.Application.index
 
-POST    /register                   controllers.Register.index
+GET    /register                    controllers.Registration.index
+POST    /register                   controllers.Registration.post
 
 POST    /login                      controllers.Login.index
 

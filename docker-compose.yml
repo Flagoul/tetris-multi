@@ -1,0 +1,29 @@
+version: "2.1"
+
+services:
+  app:
+    build:
+      context: ./
+      dockerfile: images/scala/Dockerfile
+
+    image: scala:latest
+
+    environment:
+      TETRIS_DB_URL: "localhost/tetris?verifyServerCertificate=false&useSSL=true"
+      TETRIS_DB_USER: "tetris"
+      TETRIS_DB_PASSWORD: "${TETRIS_DB_PASSWORD}"
+
+    ports:
+      - "${TETRIS_PORT:-9000}:9000"
+
+  db:
+    image: mysql:latest
+
+    ports:
+        - "${TETRIS_DB_EXPOSE_PORT:-3306}:3306"
+
+    environment:
+      MYSQL_DATABASE: "tetris"
+      MYSQL_USER: "tetris"
+      MYSQL_PASSWORD: "${TETRIS_DB_PASSWORD}"
+      MYSQL_RANDOM_ROOT_PASSWORD: 1

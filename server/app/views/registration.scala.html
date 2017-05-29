@@ -1,0 +1,23 @@
+@import forms.UserRegistrationData
+@import views.html.bootstrap
+
+
+@(form: Form[UserRegistrationData])(implicit messages: Messages)
+
+@main("Register") {
+    @helper.form(action = routes.Registration.post) {
+        @bootstrap.input(form("username"))
+        @bootstrap.input(form("password"), "password")
+        @bootstrap.input(form("password_confirmation"), "password")
+
+        @if(form.hasGlobalErrors) {
+            <ul>
+            @for(error <- form.globalErrors) {
+                <li>@Messages(error.messages, error.args)</li>
+            }
+            </ul>
+        }
+
+        <button type="submit">Register</button>
+    }
+}

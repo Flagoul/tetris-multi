@@ -1,0 +1,13 @@
+@import controllers.bootstrap.Helper._
+
+
+@(field: Field, t: String = "text")(implicit messages: Messages)
+
+
+@helper.inputText(
+    field,
+    '_label -> field.label.replace("_", " ").capitalize,
+    'placeholder -> field.label.replace("_", " ").capitalize,
+    'class -> "form-control",
+    'type -> t
+)
