@@ -158,6 +158,22 @@ class Game {
     }
 
     def movePieceDown(): Unit = {
+      do {
+        piecePositions = moveDown(gameGrid, piecePositions)
+      } while (piecePositions.nonEmpty)
+    }
+
+    dom.window.onkeypress = { (e: dom.KeyboardEvent) =>
+      println("key pressed", e.charCode)
+      e.charCode match {
+        case 97 => movePieceLeft()
+        case 100 => movePieceRight()
+        case 115 => movePieceDown()
+        // case 119 => rotate()
+      }
+    }
+
+    setInterval(gameSpeed) {
       piecePositions = moveDown(gameGrid, piecePositions)
 
       if (piecePositions.isEmpty) {
@@ -176,23 +192,6 @@ class Game {
       }
 
       userGB.drawGame(gameGrid)
-    }
-
-    dom.window.onkeypress = { (e: dom.KeyboardEvent) =>
-      println("key pressed", e.charCode)
-      e.charCode match {
-        case 97 => movePieceLeft()
-        case 100 => movePieceRight()
-        case 115 =>
-          do {
-            movePieceDown()
-          } while (piecePositions.nonEmpty)
-        // case 119 => rotate()
-      }
-    }
-
-    setInterval(gameSpeed) {
-      movePieceDown()
     }
   }
 }
