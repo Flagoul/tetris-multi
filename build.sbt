@@ -14,6 +14,7 @@ lazy val server = (project in file("server"))
       "mysql" % "mysql-connector-java" % "5.1.39",
       "com.typesafe.play" %% "play-slick" % "2.1.0",
       "com.typesafe.play" %% "play-slick-evolutions" % "2.1.0",
+      "org.mindrot" % "jbcrypt" % "0.4",
       specs2 % Test
     )
   )
