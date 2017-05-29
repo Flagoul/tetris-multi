@@ -108,19 +108,16 @@ class Game {
         // origin of square surrounding piece
         val orig = (center._1 - 1, center._2 - 1)
 
-        // translating positions relatively to origin and do right rotation
-        val newPositions = piece match {
-          case Bar => positions.map(p => {
-            val tRow = p._1 - orig._1
-            val tCol = p._2 - orig._2
-            (tCol + orig._1, tRow + orig._2)
-          })
-          case _ => positions.map(p => {
-            val tRow = p._1 - orig._1
-            val tCol = p._2 - orig._2
-            (tCol + orig._1, 3 - tRow - 1 + orig._2)
-          })
-        }
+        // translating positions relatively to origin and do transpose rotation for bar or 90° rotation for others
+        val newPositions = positions.map(p => {
+          val tRow = p._1 - orig._1
+          val tCol = p._2 - orig._2
+
+          piece match {
+            case Bar => (tCol + orig._1, tRow + orig._2)
+            case _ => (tCol + orig._1, 3 - tRow - 1 + orig._2)
+          }
+        })
 
         def outOfBounds(pos: Position) = pos._1 < 0 || pos._1 >= nGameRows || pos._2 < 0 || pos._2 >= nGameCols
 
