@@ -48,7 +48,7 @@ class Game {
 
   class GamePiece(piece: Piece, gameGrid: Array[Array[Boolean]]) extends PieceWithPosition(
     piece, gameGrid,
-    (0, nGameCols / 2 - piece.shape().head.length / 2)
+    (1, nGameCols / 2 - piece.shape().head.length / 2)
   ) {
 
     private def move(transform: Position => Position, outOfBounds: Position => Boolean): Boolean = {
@@ -98,29 +98,31 @@ class Game {
 
     def rotate(): Boolean = piece match {
       case Square => true
-      case Bar => ???
       case _ =>
+
         // The position of the center of the piece; it is the axis of rotation.
         // It is always the block at (0, 1) in the shape of the piece; to know the actual position we have to
         // compute how many "true" they are in the first line of the shape and use it as index in the actual positions.
         val center = positions(piece.shape().head.slice(0, 2).count(x => x) - 1)
 
+        // origin of square surrounding piece
         val orig = (center._1 - 1, center._2 - 1)
 
-        // translating (0, 0) to matrix top left and do right rotation surrounding piece then rotation
-        val newPositions = positions.map(p => {
-          val tRow = p._1 - orig._1
-          val tCol = p._2 - orig._2
-          (tCol + orig._1, 3 - tRow - 1 + orig._2)
-        })
+        // translating positions relatively to origin and do right rotation
+        val newPositions = piece match {
+          case Bar => positions.map(p => {
+            val tRow = p._1 - orig._1
+            val tCol = p._2 - orig._2
+            (tCol + orig._1, tRow + orig._2)
+          })
+          case _ => positions.map(p => {
+            val tRow = p._1 - orig._1
+            val tCol = p._2 - orig._2
+            (tCol + orig._1, 3 - tRow - 1 + orig._2)
+          })
+        }
 
         def outOfBounds(pos: Position) = pos._1 < 0 || pos._1 >= nGameRows || pos._2 < 0 || pos._2 >= nGameCols
-
-        println("Positions")
-        positions.foreach(println(_))
-
-        println("New positions")
-        newPositions.foreach(println(_))
 
         // piece out of bounds or collided with other piece
         if (newPositions.exists(p => outOfBounds(p) || (gameGrid(p._1)(p._2) && !positions.contains(p)))) {
@@ -164,7 +166,7 @@ class Game {
     var next = new NextPiece(nextPiece, nextPieceGrid)
 
     updateGridAtPositions(gameGrid, piece.getPositions, value = true)
-    updateGridAtPositions(nextPieceGrid, piece.getPositions, value = true)
+    updateGridAtPositions(nextPieceGrid, next.getPositions, value = true)
 
     userGB.drawGame(gameGrid)
     userGB.drawNextPiece(nextPieceGrid)
@@ -173,7 +175,6 @@ class Game {
     opponentGB.drawNextPiece(opponentNextPieceGrid)
 
     dom.window.onkeypress = { (e: dom.KeyboardEvent) =>
-      println("key pressed", e.charCode)
       e.charCode match {
         case 97 => piece.moveLeft()
         case 100 => piece.moveRight()
