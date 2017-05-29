@@ -11,13 +11,17 @@
         @bootstrap.input(form("password_confirmation"), "password")
 
         @if(form.hasGlobalErrors) {
-            <ul>
             @for(error <- form.globalErrors) {
-                <li>@Messages(error.messages, error.args)</li>
+                <div class="alert alert-danger">
+                    @Messages(error.messages, error.args)
+                </div>
             }
-            </ul>
         }
 
-        <button type="submit">Register</button>
+        <div class="form-group row">
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary float-right">Register</button>
+            </div>
+        </div>
     }
 }
