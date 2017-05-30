@@ -5,10 +5,10 @@ import java.sql.Timestamp
 import slick.jdbc.MySQLProfile.api._
 
 
-case class Session(id: Option[Long], uuid: String, expiration: Option[Timestamp], user_id: Long) extends AbstractModel(id)
+case class UserSession(id: Option[Long], uuid: String, expiration: Option[Timestamp], user_id: Long) extends AbstractModel(id)
 
 
-class SessionTable(tag: Tag) extends AbstractTable[Session](tag, "sessions") {
+class SessionTable(tag: Tag) extends AbstractTable[UserSession](tag, "sessions") {
   val users = TableQuery[UserTable]
 
   def uuid = column[String]("uuid", O.Unique)
@@ -17,5 +17,5 @@ class SessionTable(tag: Tag) extends AbstractTable[Session](tag, "sessions") {
 
   def user = foreignKey("user_fk", user_id, users)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
 
-  override def * = (id.?, uuid, expiration.?, user_id) <> (Session.tupled, Session.unapply)
+  override def * = (id.?, uuid, expiration.?, user_id) <> (UserSession.tupled, UserSession.unapply)
 }

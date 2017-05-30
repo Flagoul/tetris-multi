@@ -12,11 +12,18 @@ CREATE TABLE `sessions` (
   # We set the session to last 1 week
   `expiration` TIMESTAMP NOT NULL,
   `user_id` BIGINT NOT NULL,
-  FOREIGN KEY (id) REFERENCES users(id)
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 
-CREATE TRIGGER set_timestamp BEFORE INSERT ON sessions
+CREATE TRIGGER set_session_timestamp BEFORE INSERT ON sessions
+FOR EACH ROW
+  BEGIN
+    SET NEW.expiration = DATE_ADD(UTC_TIMESTAMP, INTERVAL 7 DAY);;
+  END;
+
+
+CREATE TRIGGER update_session_timestamp BEFORE UPDATE ON sessions
 FOR EACH ROW
   BEGIN
     SET NEW.expiration = DATE_ADD(UTC_TIMESTAMP, INTERVAL 7 DAY);;
@@ -24,6 +31,7 @@ FOR EACH ROW
 
 
 # --- !Downs
-DROP TRIGGER IF EXISTS set_timestamp;
+DROP TRIGGER IF EXISTS set_session_timestamp;
+DROP TRIGGER IF EXISTS update_session_timestamp;
 DROP TABLE IF EXISTS `sessions`;
 DROP TABLE IF EXISTS `users`;
