@@ -9,11 +9,11 @@ import models.User
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, Controller}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 
-class Registration @Inject()(users: UserManager, val messagesApi: MessagesApi) extends Controller with I18nSupport {
+class Registration @Inject()(users: UserManager, val messagesApi: MessagesApi)
+                            (implicit ec: ExecutionContext)extends Controller with I18nSupport {
   def index() = Action { implicit request =>
     Ok(views.html.registration(form))
   }

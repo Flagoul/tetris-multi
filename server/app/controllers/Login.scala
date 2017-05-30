@@ -9,12 +9,12 @@ import play.api.mvc.{Action, Controller}
 import forms.LoginForm._
 import models.{Session, User}
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
 
+class Login @Inject()(users: UserManager, sessions: SessionManager, val messagesApi: MessagesApi)
+                     (implicit ec: ExecutionContext) extends Controller with I18nSupport {
 
-class Login @Inject()(users: UserManager, sessions: SessionManager, val messagesApi: MessagesApi) extends Controller with I18nSupport {
   def index() = Action { implicit request =>
     Ok(views.html.login(form))
   }

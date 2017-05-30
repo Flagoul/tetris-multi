@@ -7,13 +7,13 @@ import org.mindrot.jbcrypt.BCrypt
 import play.api.Application
 import slick.lifted.TableQuery
 import slick.jdbc.MySQLProfile.api._
-import scala.concurrent.ExecutionContext.Implicits.global
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 
 @Singleton
-class UserManager @Inject()(val appProvider: Provider[Application]) extends AbstractManager[User, UserTable] {
+class UserManager @Inject()(val appProvider: Provider[Application])
+                           (implicit ec: ExecutionContext) extends AbstractManager[User, UserTable] {
   protected val query: TableQuery[UserTable] = TableQuery[UserTable]
 
   override protected def withUpdatedId(user: User, id: Long): User = {
