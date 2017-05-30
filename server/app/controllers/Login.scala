@@ -1,19 +1,20 @@
 package controllers
 
+import java.util.UUID
 import javax.inject.Inject
 
-import managers.UserManager
+import managers.{SessionManager, UserManager}
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, Controller}
 import forms.LoginForm._
-import models.User
+import models.{Session, User}
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
 
-class Login @Inject()(users: UserManager, val messagesApi: MessagesApi) extends Controller with I18nSupport {
+class Login @Inject()(users: UserManager, sessions: SessionManager, val messagesApi: MessagesApi) extends Controller with I18nSupport {
   def index() = Action { implicit request =>
     Ok(views.html.login(form))
   }
@@ -25,9 +26,13 @@ class Login @Inject()(users: UserManager, val messagesApi: MessagesApi) extends 
       },
       data => {
         users.authenticate(User(None, data.name, data.password))
-          .map {
-            case Some(user) => Redirect("/")
-            case None => BadRequest(views.html.login(form.withGlobalError("Bad password or user does not exist")))
+          .flatMap {
+            case Some(user) =>
+              sessions.create(Session(None, UUID.randomUUID.toString, None, user.id.get))
+                .map(session => Redirect("/").withSession(request.session + ("uuid" -> session.uuid.toString)))
+            case None => Future.successful(
+              BadRequest(views.html.login(form.withGlobalError("Bad password or user does not exist")))
+            )
           }
       })
   }
