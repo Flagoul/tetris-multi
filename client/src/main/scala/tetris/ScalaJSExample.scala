@@ -1,6 +1,6 @@
-package example
+package tetris
 
-import example.game._
+import tetris.game._
 import org.scalajs.dom
 import shared.SharedMessages
 
