@@ -149,8 +149,18 @@ class Game {
     }
   }
 
+  def deleteCompletedLines(gameGrid: Array[Array[Boolean]]): Array[Array[Boolean]] = {
+    val res = gameGrid.filterNot(row => row.count(x => x) == nGameCols)
+
+    if (res.length < nGameRows) {
+      return Array.ofDim[Boolean](nGameRows - res.length, nGameCols) ++ res
+    }
+
+    res
+  }
+
   def run(): Unit = {
-    val gameGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
+    var gameGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
     val nextPieceGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
 
     val opponentGameGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
@@ -184,6 +194,8 @@ class Game {
       val moved = piece.moveDown()
 
       if (!moved) {
+        gameGrid = deleteCompletedLines(gameGrid)
+
         updateGridAtPositions(nextPieceGrid, next.getPositions, value = false)
 
         currentPiece = nextPiece
