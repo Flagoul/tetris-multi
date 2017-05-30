@@ -51,43 +51,41 @@ class Game {
     (1, nGameCols / 2 - piece.shape().head.length / 2)
   ) {
 
-    private def move(transform: Position => Position, outOfBounds: Position => Boolean): Boolean = {
-      val newPositions: List[Position] = positions.map(transform)
-
-      // piece out of bounds or collided with other piece
-      if (newPositions.exists(p => outOfBounds(p) || (gameGrid(p._1)(p._2) && !positions.contains(p)))) {
-        return false
-      }
-
+    def updateGrid(newPositions: List[Position]): Unit = {
       updateGridAtPositions(gameGrid, positions, value = false)
       updateGridAtPositions(gameGrid, newPositions, value = true)
       userGB.drawGame(gameGrid)
 
       positions = newPositions
-
-      true
     }
 
-    def moveLeft(): Boolean = {
-      move(
-        p => (p._1, p._2 - 1),
-        p => p._2 < 0 || (gameGrid(p._1)(p._2) && !positions.contains(p))
-      )
+    def collides(newPositions: List[Position], inBounds: Position => Boolean): Boolean = {
+      newPositions.exists(p => !inBounds(p) || (gameGrid(p._1)(p._2) && !positions.contains(p)))
     }
 
-    def moveRight(): Boolean = {
-      move(
-        p => (p._1, p._2 + 1),
-        p => p._2 >= nGameCols
-      )
+    private def move(transform: Position => Position, inBounds: Position => Boolean): Boolean = {
+      val newPositions: List[Position] = positions.map(transform)
+
+      val couldMove = !collides(newPositions, inBounds)
+      if (couldMove) {
+        updateGrid(newPositions)
+      }
+
+      couldMove
     }
 
-    def moveDown(): Boolean = {
-      move(
-        p => (p._1 + 1, p._2),
-        p => p._1 >= nGameRows
-      )
-    }
+    def inBoundLeft(p: Position): Boolean = p._2 >= 0
+    def inBoundRight(p: Position): Boolean = p._2 < nGameCols
+    def inBoundBottom(p: Position): Boolean = p._1 < nGameRows
+    def inBounds(p: Position): Boolean = inBoundLeft(p) && inBoundRight(p) && inBoundBottom(p)
+
+    def transformLeft(p: Position): Position = (p._1, p._2 - 1)
+    def transformRight(p: Position): Position = (p._1, p._2 + 1)
+    def transformDown(p: Position): Position = (p._1 + 1, p._2)
+
+    def moveLeft(): Boolean = move(transformLeft, inBoundLeft)
+    def moveRight(): Boolean = move(transformRight, inBoundRight)
+    def moveDown(): Boolean = move(transformDown, inBoundBottom)
 
     def fall(): Unit = {
       var moved = false
@@ -119,20 +117,12 @@ class Game {
           }
         })
 
-        def outOfBounds(pos: Position) = pos._1 < 0 || pos._1 >= nGameRows || pos._2 < 0 || pos._2 >= nGameCols
-
-        // piece out of bounds or collided with other piece
-        if (newPositions.exists(p => outOfBounds(p) || (gameGrid(p._1)(p._2) && !positions.contains(p)))) {
-          return false
+        val couldMove = !collides(newPositions, inBounds)
+        if (couldMove) {
+          updateGrid(newPositions)
         }
 
-        updateGridAtPositions(gameGrid, positions, value = false)
-        updateGridAtPositions(gameGrid, newPositions, value = true)
-        userGB.drawGame(gameGrid)
-
-        positions = newPositions
-
-        true
+        couldMove
     }
   }
 
