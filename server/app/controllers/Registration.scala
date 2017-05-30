@@ -28,7 +28,9 @@ class Registration @Inject()(users: UserManager, val sessions: SessionManager, v
       },
       data => {
         users.create(User(None, data.name, data.password))
-          .map(_ => Redirect("/"))
+          .flatMap((user: User) =>
+            sessions.registerSession(user.id.get).map(session => Redirect("/").withSession(session))
+          )
           .recover({
             case exception: SQLIntegrityConstraintViolationException =>
               if (exception.getMessage.contains("Duplicate") && exception.getMessage.contains("username")) {

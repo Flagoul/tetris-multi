@@ -1,6 +1,5 @@
 package managers
 
-import java.sql.Timestamp
 import java.time.Instant
 import java.util.UUID
 import javax.inject._
