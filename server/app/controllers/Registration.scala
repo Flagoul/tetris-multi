@@ -14,7 +14,7 @@ import scala.concurrent.Future
 
 
 class Registration @Inject()(users: UserManager, val messagesApi: MessagesApi) extends Controller with I18nSupport {
-  def index() = Action {
+  def index() = Action { implicit request =>
     Ok(views.html.registration(form))
   }
 

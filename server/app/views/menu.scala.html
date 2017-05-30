@@ -1,16 +1,18 @@
+@()(implicit request: RequestHeader)
+
 <nav class="navbar navbar-toggleable-md navbar-inverse bg-inverse">
     <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
     </button>
-    <a class="navbar-brand" href="@routes.Application.index()">Tetris</a>
+    <a class="navbar-brand @("active".when(request.path == routes.Application.index.toString))" href="@routes.Application.index">Tetris</a>
 
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <div class="navbar-nav mr-auto">
-            <a class="nav-link" href="@routes.Game.index()">Play</a>
+            <a class="nav-link @("active".when(request.path == routes.Game.index.toString))" href="@routes.Game.index">Play</a>
             <a class="nav-link" href="">High Scores</a>
         </div>
         <div class="navbar-nav ml-auto">
-            <a class="nav-link" href="@routes.Login.index()">Login</a>
+            <a class="nav-link @("active".when(request.path == routes.Login.index.toString))" href="@routes.Login.index">Login</a>
         </div>
     </div>
 </nav>

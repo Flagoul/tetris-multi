@@ -1,4 +1,4 @@
-@(title: String, stylesheets: Html = Html(""), scripts: Html = Html(""))(content: Html)
+@(title: String, stylesheets: Html = Html(""), scripts: Html = Html(""))(content: Html)(implicit request: RequestHeader)
 
 <!DOCTYPE html>
 
@@ -15,7 +15,7 @@
             @scripts
     </head>
     <body>
-        @menu.render()
+        @menu()
 
         <div class="container">
             @content

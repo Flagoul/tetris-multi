@@ -11,7 +11,8 @@ GET     /                           controllers.Application.index
 GET    /register                    controllers.Registration.index
 POST    /register                   controllers.Registration.post
 
-POST    /login                      controllers.Login.index
+GET     /login                      controllers.Login.index
+POST    /login                      controllers.Login.post
 
 POST    /logout                     controllers.Logout.index
 
