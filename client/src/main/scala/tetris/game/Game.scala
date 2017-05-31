@@ -30,14 +30,13 @@ class Game {
       * @return The positions of where the blocks of the pieces should be drawn.
       */
     def initPiecePositions(): List[Position] = {
-      val pieceShape = piece.shape()
-      val pieceWidth = pieceShape.head.length
-      val pieceHeight = pieceShape.length
+      val pieceWidth = piece.shape.head.length
+      val pieceHeight = piece.shape.length
 
       val positions = for {
         row <- 0 until pieceHeight
         col <- 0 until pieceWidth
-        if pieceShape(row)(col)
+        if piece.shape(row)(col)
       } yield (initPos._1 + row, initPos._2 + col)
 
       positions.toList
@@ -48,7 +47,7 @@ class Game {
 
   class GamePiece(piece: Piece, gameGrid: Array[Array[Boolean]]) extends PieceWithPosition(
     piece, gameGrid,
-    (1, nGameCols / 2 - piece.shape().head.length / 2)
+    (1, nGameCols / 2 - piece.shape.head.length / 2)
   ) {
 
     def updateGrid(newPositions: List[Position]): Unit = {
@@ -95,13 +94,13 @@ class Game {
     }
 
     def rotate(): Boolean = piece match {
-      case Square => true
+      case SquarePiece => true
       case _ =>
 
         // The position of the center of the piece; it is the axis of rotation.
         // It is always the block at (0, 1) in the shape of the piece; to know the actual position we have to
         // compute how many "true" they are in the first line of the shape and use it as index in the actual positions.
-        val center = positions(piece.shape().head.slice(0, 2).count(x => x) - 1)
+        val center = positions(piece.shape.head.slice(0, 2).count(x => x) - 1)
 
         // origin of square surrounding piece
         val orig = (center._1 - 1, center._2 - 1)
@@ -112,7 +111,7 @@ class Game {
           val tCol = p._2 - orig._2
 
           piece match {
-            case Bar => (tCol + orig._1, tRow + orig._2)
+            case BarPiece => (tCol + orig._1, tRow + orig._2)
             case _ => (tCol + orig._1, 3 - tRow - 1 + orig._2)
           }
         })
@@ -128,10 +127,10 @@ class Game {
 
   class NextPiece(piece: Piece, gameGrid: Array[Array[Boolean]]) extends PieceWithPosition(
     piece, gameGrid,
-    (nNextPieceRows / 2 - piece.shape().length / 2 , nNextPieceCols / 2 - piece.shape().head.length / 2)
+    (nNextPieceRows / 2 - piece.shape.length / 2 , nNextPieceCols / 2 - piece.shape.head.length / 2)
   )
 
-  def randomPiece(): Piece = Random.shuffle(List(Bar, InvL, L, S, Square, T, Z)).head
+  def randomPiece(): Piece = Random.shuffle(List(BarPiece, InvLPiece, LPiece, SPiece, SquarePiece, TPiece, ZPiece)).head
 
   def updateGridAtPositions(grid: Array[Array[Boolean]], positions: List[Position], value: Boolean): Unit = {
     for (pos <- positions) {

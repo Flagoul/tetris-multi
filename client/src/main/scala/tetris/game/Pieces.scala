@@ -1,52 +1,52 @@
 package tetris.game
 
 abstract class Piece {
-  def shape(): Array[Array[Boolean]]
+  val shape: Array[Array[Boolean]]
 }
 
-object Square extends Piece {
-  def shape(): Array[Array[Boolean]] = Array(
+object SquarePiece extends Piece {
+  val shape: Array[Array[Boolean]] = Array(
     Array(true, true),
     Array(true, true)
   )
 }
 
-object Bar extends Piece {
-  def shape(): Array[Array[Boolean]] = Array(
+object BarPiece extends Piece {
+  val shape: Array[Array[Boolean]] = Array(
     Array(true, true, true, true)
   )
 }
 
-object L extends Piece {
-  def shape(): Array[Array[Boolean]] = Array(
+object LPiece extends Piece {
+  val shape: Array[Array[Boolean]] = Array(
     Array(true, true, true),
     Array(true, false, false)
   )
 }
 
-object InvL extends Piece {
-  def shape(): Array[Array[Boolean]] = Array(
+object InvLPiece extends Piece {
+  val shape: Array[Array[Boolean]] = Array(
     Array(true, true, true),
     Array(false, false, true)
   )
 }
 
-object T extends Piece {
-  def shape(): Array[Array[Boolean]] = Array(
+object TPiece extends Piece {
+  val shape: Array[Array[Boolean]] = Array(
     Array(true, true, true),
     Array(false, true, false)
   )
 }
 
-object S extends Piece {
-  def shape(): Array[Array[Boolean]] = Array(
+object SPiece extends Piece {
+  val shape: Array[Array[Boolean]] = Array(
     Array(false, true, true),
     Array(true, true, false)
   )
 }
 
-object Z extends Piece {
-  def shape(): Array[Array[Boolean]] = Array(
+object ZPiece extends Piece {
+  val shape: Array[Array[Boolean]] = Array(
     Array(true, true, false),
     Array(false, true, true)
   )
