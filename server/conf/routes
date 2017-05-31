@@ -14,7 +14,7 @@ POST    /register                   controllers.Registration.post
 GET     /login                      controllers.Login.index
 POST    /login                      controllers.Login.post
 
-POST    /logout                     controllers.Logout.index
+GET    /logout                      controllers.Logout.index
 
 GET     /account                    controllers.Account.index
 PUT     /account                    controllers.Account.update

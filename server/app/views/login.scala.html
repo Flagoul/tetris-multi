@@ -1,8 +1,8 @@
 @import forms.LoginData
 @import views.html.bootstrap
+@import controllers.authentication.AuthenticatedRequest
 
-
-@(form: Form[LoginData])(implicit messages: Messages, request: RequestHeader)
+@(form: Form[LoginData])(implicit messages: Messages, request: AuthenticatedRequest[AnyContent])
 
 @main("Login") {
     <div class="row align-items-center">

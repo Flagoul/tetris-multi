@@ -1,8 +1,8 @@
 @import forms.UserRegistrationData
 @import views.html.bootstrap
+@import controllers.authentication.AuthenticatedRequest
 
-
-@(form: Form[UserRegistrationData])(implicit messages: Messages, request: RequestHeader)
+@(form: Form[UserRegistrationData])(implicit messages: Messages, request: AuthenticatedRequest[AnyContent])
 
 @main("Register") {
     <div class="row align-items-center">

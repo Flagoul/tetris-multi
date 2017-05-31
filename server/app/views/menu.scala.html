@@ -1,4 +1,6 @@
-@()(implicit request: RequestHeader)
+@import controllers.authentication.AuthenticatedRequest
+
+@()(implicit request: AuthenticatedRequest[AnyContent])
 
 <nav class="navbar navbar-toggleable-md navbar-inverse bg-inverse">
     <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
@@ -12,7 +14,13 @@
             <a class="nav-link" href="">High Scores</a>
         </div>
         <div class="navbar-nav ml-auto">
-            <a class="nav-link @("active".when(request.path == routes.Login.index.toString))" href="@routes.Login.index">Login</a>
+            @if(request.userSession.isEmpty) {
+                <a class="nav-link @("active".when(request.path == routes.Login.index.toString))" href="@routes.Login.index">
+                    Login
+                </a>
+            } else {
+                <a class="nav-link" href="@routes.Logout.index">Logout</a>
+            }
         </div>
     </div>
 </nav>

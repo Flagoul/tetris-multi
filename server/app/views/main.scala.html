@@ -1,4 +1,6 @@
-@(title: String, stylesheets: Html = Html(""), scripts: Html = Html(""))(content: Html)(implicit request: RequestHeader)
+@import controllers.authentication.AuthenticatedRequest
+
+@(title: String, stylesheets: Html = Html(""), scripts: Html = Html(""))(content: Html)(implicit request: AuthenticatedRequest[AnyContent])
 
 <!DOCTYPE html>
 

@@ -1,4 +1,6 @@
-@()(implicit request: RequestHeader)
+@import controllers.authentication.AuthenticatedRequest
+
+@()(implicit request: AuthenticatedRequest[AnyContent])
 
 @stylesheets = {
     <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/game.css")">
