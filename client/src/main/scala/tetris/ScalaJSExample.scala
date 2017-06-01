@@ -2,6 +2,7 @@ package tetris
 
 import tetris.game._
 import org.scalajs.dom
+import org.scalajs.dom.WebSocket
 import shared.SharedMessages
 
 import scala.scalajs.js

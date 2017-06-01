@@ -1,6 +1,9 @@
 package tetris.game
 
 import org.scalajs.dom
+import org.scalajs.dom.WebSocket
+import org.scalajs.dom.raw.MessageEvent
+import shared.Actions._
 
 import scala.util.Random
 import scala.scalajs.js.timers.setInterval
@@ -148,7 +151,19 @@ class Game {
     res
   }
 
+  def sendAction(ws: WebSocket, action: Action): Unit = {
+    val json = s"""{"action": "${action.name}"}""" // FIXME
+    ws.send(json)
+  }
+
   def run(): Unit = {
+    val host = dom.window.location.host
+    val ws = new WebSocket(s"ws://$host/ws")
+
+    ws.onmessage = {(e: MessageEvent) =>
+      println("received: " + e.data)
+    }
+
     var gameGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
     val nextPieceGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
 
@@ -170,12 +185,15 @@ class Game {
     opponentGB.drawGame(opponentGameGrid)
     opponentGB.drawNextPiece(opponentNextPieceGrid)
 
-    dom.window.onkeypress = { (e: dom.KeyboardEvent) =>
-      e.charCode match {
-        case 97 => piece.moveLeft()
-        case 100 => piece.moveRight()
-        case 115 => piece.fall()
-        case 119 => piece.rotate()
+    dom.window.onkeydown = { (e: dom.KeyboardEvent) =>
+      // FIXME remove direct drawing after
+
+      e.keyCode match {
+        case 37 | 65 => piece.moveLeft(); sendAction(ws, Left)
+        case 38 | 87 => piece.rotate(); sendAction(ws, Rotate)
+        case 39 | 68 => piece.moveRight(); sendAction(ws, Right)
+        case 40 | 83 => piece.fall(); sendAction(ws, Fall)
+        case _ => println(e.keyCode);
       }
     }
 
