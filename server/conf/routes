@@ -11,14 +11,9 @@ GET     /                           controllers.Application.index
 GET    /register                    controllers.Registration.index
 POST    /register                   controllers.Registration.post
 
-GET     /login                      controllers.Login.index
-POST    /login                      controllers.Login.post
-
-GET    /logout                      controllers.Logout.index
-
-GET     /account                    controllers.Account.index
-PUT     /account                    controllers.Account.update
-DELETE  /account                    controllers.Account.delete
+GET     /login                      controllers.Session.login
+POST    /login                      controllers.Session.loginPost
+GET    /logout                      controllers.Session.logout
 
 GET     /stats                      controllers.Stats.index
 

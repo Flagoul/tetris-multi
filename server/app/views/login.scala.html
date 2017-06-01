@@ -12,7 +12,7 @@
                     Please Log In
                 </div>
                 <div class="card-block">
-                @helper.form(action = routes.Login.post) {
+                @helper.form(action = routes.Session.loginPost) {
                     @bootstrap.input(form("username"))
                     @bootstrap.input(form("password"), "password")
 

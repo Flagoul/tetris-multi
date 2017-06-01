@@ -11,7 +11,7 @@ class AuthenticatedRequest[A](val userSession: Option[UserSession], request: Req
   extends WrappedRequest[A](request)
 
 
-trait AuthenticatedController extends Controller {
+abstract class SecurityController extends Controller {
   implicit val sessions: SessionManager
   implicit val ec: ExecutionContext
 

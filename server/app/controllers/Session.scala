@@ -2,7 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
-import controllers.authentication.AuthenticatedController
+import controllers.authentication.SecurityController
 import forms.LoginForm._
 import managers.{SessionManager, UserManager}
 import models.User
@@ -12,15 +12,15 @@ import play.api.mvc.{Action, AnyContent, Controller}
 import scala.concurrent.{ExecutionContext, Future}
 
 
-class Login @Inject() (val users: UserManager, val sessions: SessionManager, val messagesApi: MessagesApi)
-                      (implicit val ec: ExecutionContext)
-  extends Controller with I18nSupport with AuthenticatedController {
+class Session @Inject()(val users: UserManager, val sessions: SessionManager, val messagesApi: MessagesApi)
+                       (implicit val ec: ExecutionContext)
+  extends SecurityController with I18nSupport {
 
-  def index() = UnAuthenticatedAction { implicit request =>
+  def login(): Action[AnyContent] = UnAuthenticatedAction { implicit request =>
     Ok(views.html.login(form))
   }
 
-  def post(): Action[AnyContent] = UnAuthenticatedAction.async { implicit request =>
+  def loginPost(): Action[AnyContent] = UnAuthenticatedAction.async { implicit request =>
     form.bindFromRequest.fold(
       errors => {
         Future.successful(BadRequest(views.html.login(errors)))
@@ -35,5 +35,11 @@ class Login @Inject() (val users: UserManager, val sessions: SessionManager, val
             )
           }
       })
+  }
+
+  def logout(): Action[AnyContent] = AuthenticatedAction.async { implicit request =>
+    sessions.delete(request.userSession.get.id.get).map(
+      _ => Redirect("/login").withSession(request.session - "uuid")
+    )
   }
 }

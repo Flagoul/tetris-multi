@@ -2,15 +2,13 @@ package controllers
 
 import javax.inject.Inject
 
-import controllers.authentication.AuthenticatedController
+import controllers.authentication.SecurityController
 import managers.SessionManager
-import play.api.mvc._
 import shared.SharedMessages
 
 import scala.concurrent.ExecutionContext
 
-class Application @Inject()(val sessions: SessionManager, val ec: ExecutionContext)
-  extends Controller with AuthenticatedController {
+class Application @Inject()(val sessions: SessionManager, val ec: ExecutionContext) extends SecurityController {
 
   def index = Action { implicit request =>
     Ok(views.html.index(SharedMessages.itWorks))

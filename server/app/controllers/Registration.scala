@@ -3,19 +3,19 @@ package controllers
 import java.sql.SQLIntegrityConstraintViolationException
 import javax.inject.Inject
 
-import controllers.authentication.AuthenticatedController
+import controllers.authentication.SecurityController
 import forms.RegistrationForm._
 import managers.{SessionManager, UserManager}
 import models.User
 import play.api.i18n.{I18nSupport, MessagesApi}
-import play.api.mvc.{Action, AnyContent, Controller}
+import play.api.mvc.{Action, AnyContent}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 
 class Registration @Inject()(users: UserManager, val sessions: SessionManager, val messagesApi: MessagesApi)
                             (implicit val ec: ExecutionContext)
-  extends Controller with I18nSupport with AuthenticatedController {
+  extends SecurityController with I18nSupport {
 
   def index() = UnAuthenticatedAction { implicit request =>
     Ok(views.html.registration(form))

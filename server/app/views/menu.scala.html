@@ -15,11 +15,11 @@
         </div>
         <div class="navbar-nav ml-auto">
             @if(request.userSession.isEmpty) {
-                <a class="nav-link @("active".when(request.path == routes.Login.index.toString))" href="@routes.Login.index">
+                <a class="nav-link @("active".when(request.path == routes.Session.login.toString))" href="@routes.Session.login">
                     Login
                 </a>
             } else {
-                <a class="nav-link" href="@routes.Logout.index">Logout</a>
+                <a class="nav-link" href="@routes.Session.logout">Logout</a>
             }
         </div>
     </div>
