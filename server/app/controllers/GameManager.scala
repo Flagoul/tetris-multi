@@ -2,22 +2,20 @@ package controllers
 
 import javax.inject.Inject
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorRef, ActorSystem, PoisonPill, Props}
 import akka.stream.Materializer
 import game.Game
+import shared.Actions
 import play.api.Logger.logger
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json._
 import play.api.libs.streams.ActorFlow
 import play.api.mvc.WebSocket
 
 import scala.collection.mutable
 
 class GameManager @Inject()(implicit system: ActorSystem, materializer: Materializer) {
-  private var waitingGames: mutable.Queue[Game] = mutable.Queue()
-  private var games: mutable.Queue[Game] = mutable.Queue()
-
-  //FIXME temporary
-  private var game: Game = new Game()
+  private var waitingUsers: mutable.Queue[String] = mutable.Queue()
+  private var games: Map[String, Game] = Map()
 
   def socket: WebSocket = WebSocket.accept[String, String] { _ =>
     ActorFlow.actorRef(out => Props(new GameWSActor(out)))
@@ -27,36 +25,53 @@ class GameManager @Inject()(implicit system: ActorSystem, materializer: Material
     override def preStart(): Unit = {
       super.preStart()
 
-      // TODO link game with user
+      val id = java.util.UUID.randomUUID.toString
+
       // create game or join according to availability
-      if (waitingGames.isEmpty) {
-        waitingGames += new Game()
+      if (waitingUsers.isEmpty) {
+        waitingUsers += id
         println("waiting")
       } else {
-        games += waitingGames.dequeue
+        val opponentId = waitingUsers.dequeue
+        val game = new Game(id, opponentId)
+
+        games += (id -> game)
+        games += (opponentId -> game)
+
         println("playing")
       }
+
+      out ! Json.stringify(Json.obj("id" -> id))
     }
 
     def receive: PartialFunction[Any, Unit] = {
       case msg: String => {
-        val data: JsValue = Json.parse(msg)
-        val action = (data \ "action").as[String]
+        try {
+          val data: JsValue = Json.parse(msg)
+          val action = (data \ "action").as[String]
+          val id = (data \ "id").as[String]
 
-        //FIXME change what to do
-        action match {
-          case "play" =>
-          case "start" => out ! "start"
-          case "left" => out ! "left"
-          case "right" => out ! "right"
-          case "rotate" => out ! "rotate"
-          case "fall" => out ! "fall"
-          case "quit" => ???
-          case _ => logger.warn(s"Unknown event received: $action")
+          val game = games(id)
+
+          //FIXME change what to do
+          action match {
+            case "start" => out ! "start"
+            case "left" => out ! game.movePiece(id, Actions.Left)
+            case "right" => out ! game.movePiece(id, Actions.Right)
+            case "rotate" => out ! game.movePiece(id, Actions.Rotate)
+            case "fall" => out ! game.movePiece(id, Actions.Fall)
+            case "quit" => ???
+            case _ => logger.warn(s"Unknown event received: $action")
+          }
+        } catch {
+          case e: JsResultException =>
+            logger.warn(s"Invalid json: ${e.errors}")
+            self ! PoisonPill
         }
       }
       case _ =>
         logger.warn("Unsupported data format received!")
+        self ! PoisonPill
     }
   }
 }
