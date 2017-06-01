@@ -4,17 +4,21 @@ import play.api.data._
 import play.api.data.Forms._
 
 
-case class LoginData(name: String, password: String)
-
-
+/**
+  * Contains data useful for login a user in
+  */
 object LoginForm {
-  def validate(data: UserRegistrationData) = {
-    data.password match {
-      case data.password_confirmation => Some(data)
-      case _ => None
-    }
-  }
+  /**
+    * Class to encapsulate login data
+    *
+    * @param name of the user
+    * @param password of the user
+    */
+  case class LoginData(name: String, password: String)
 
+  /**
+    * Form for login
+    */
   val form = Form(
     mapping(
       "username" -> nonEmptyText(maxLength = 255),
