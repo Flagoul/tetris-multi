@@ -1,21 +1,30 @@
 package game
 
+import akka.actor.ActorRef
 import shared.GameSettings.{nGameCols, nGameRows}
 import play.api.libs.json.{JsBoolean, JsObject, Json}
 import shared.Actions._
 
 import scala.util.Random
 
-class Game(val user1: GameUser, val user2: GameUser) {
-  case class UserGameState(user: GameUser, state: GameState)
+class Game(val gameUser1: GameUser, val gameUser2: GameUser) {
 
-  private val users: Map[String, UserGameState] = Map(
-    user1.id -> UserGameState(user1, new GameState(randomPiece(), randomPiece())),
-    user2.id -> UserGameState(user2, new GameState(randomPiece(), randomPiece()))
+  case class GameUserWithState(user: GameUser) {
+    val id: String = user.id
+    val out: ActorRef = user.ref
+    val state: GameState = GameState(randomPiece(), randomPiece())
+  }
+
+  private val user1: GameUserWithState = GameUserWithState(gameUser1)
+  private val user2: GameUserWithState = GameUserWithState(gameUser2)
+
+  private val users: Map[String, GameUserWithState] = Map(
+    user1.id -> user1,
+    user2.id -> user2
   )
 
-  def opponent(userId: String): GameUser = {
-    if (userId == user1.id) user2
+  def opponent(id: String): GameUserWithState = {
+    if (id == user1.id) user2
     else user1
   }
 
@@ -24,9 +33,12 @@ class Game(val user1: GameUser, val user2: GameUser) {
   }
 
   def movePiece(userId: String, action: Action): Unit = {
-    println(s"Moving piece to ${action.name}")
     val user = users(userId)
     val gs = user.state
+
+    if (!gs.ready) {
+      return
+    }
 
     val moved: Boolean = action match {
       case Left => gs.piece.moveLeft()
@@ -40,9 +52,24 @@ class Game(val user1: GameUser, val user2: GameUser) {
     }
   }
 
-  def broadcast(user: UserGameState, jsonObj: JsObject): Unit = {
-    user.user.ref ! Json.toJson(jsonObj + ("opponent" -> JsBoolean(false))).toString()
-    opponent(user.user.id).ref ! Json.toJson(jsonObj + ("opponent" -> JsBoolean(true))).toString()
+  def setReady(id: String): Unit = {
+    users(id).state.ready = true
+    println(id + " is ready")
+    if (opponent(id).state.ready) {
+      initBroadcast()
+    }
+  }
+
+  def initBroadcast(): Unit = {
+    broadcast(users(gameUser1.id), Json.obj("gameGrid" -> users(gameUser1.id).state.gameGrid))
+    broadcast(users(gameUser1.id), Json.obj("nexPieceGrid" -> users(gameUser1.id).state.nextPieceGrid))
+    broadcast(users(gameUser2.id), Json.obj("gameGrid" -> users(gameUser2.id).state.gameGrid))
+    broadcast(users(gameUser2.id), Json.obj("nexPieceGrid" -> users(gameUser2.id).state.nextPieceGrid))
+  }
+
+  def broadcast(user: GameUserWithState, jsonObj: JsObject): Unit = {
+    user.out ! Json.toJson(jsonObj + ("opponent" -> JsBoolean(false))).toString()
+    opponent(user.id).out ! Json.toJson(jsonObj + ("opponent" -> JsBoolean(true))).toString()
   }
 
   def randomPiece(): Piece = Random.shuffle(List(BarPiece, InvLPiece, LPiece, SPiece, SquarePiece, TPiece, ZPiece)).head

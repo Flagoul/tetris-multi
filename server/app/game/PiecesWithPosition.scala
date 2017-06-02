@@ -46,9 +46,8 @@ object PiecesWithPosition {
 
     def updateGrid(newPositions: List[Position]): Unit = {
       updateGridAtCurrentPosition(value = false)
-      updateGridAtCurrentPosition(value = true)
-
       positions = newPositions
+      updateGridAtCurrentPosition(value = true)
     }
 
     def collides(newPositions: List[Position], inBounds: Position => Boolean): Boolean = {

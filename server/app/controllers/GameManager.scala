@@ -70,7 +70,7 @@ class GameManager @Inject()(implicit system: ActorSystem, materializer: Material
 
       val game = games(id)
       action match {
-        case "start" => out ! "start" // FIXME launch game
+        case "start" => game.setReady(id)
         case "quit" => self ! PoisonPill
         case "left" => game.movePiece(id, Actions.Left)
         case "right" => game.movePiece(id, Actions.Right)
