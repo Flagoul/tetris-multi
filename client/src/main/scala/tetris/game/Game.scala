@@ -1,22 +1,15 @@
 package tetris.game
 
+import json._
 import org.scalajs.dom
 import org.scalajs.dom.WebSocket
 import org.scalajs.dom.raw.MessageEvent
 import shared.Actions._
+import shared.GameSettings._
 
 import scala.util.Random
-import scala.scalajs.js.timers.setInterval
 
 class Game {
-  val nGameRows: Int = 22
-  val nGameCols: Int = 10
-  val nNextPieceRows: Int = 5
-  val nNextPieceCols: Int = 5
-
-  // FIXME temporary: should change with time
-  val gameSpeed: Int = 500
-
   private val userGB: GameBox = new GameBox("user-game-box", nGameRows, nGameCols, nNextPieceRows, nNextPieceCols)
   private val opponentGB: GameBox = new GameBox("opponent-game-box", nGameRows, nGameCols, nNextPieceRows, nNextPieceCols)
 
@@ -151,8 +144,8 @@ class Game {
     res
   }
 
-  def sendAction(ws: WebSocket, action: Action): Unit = {
-    val json = s"""{"action": "${action.name}"}""" // FIXME
+  def sendAction(id: String, ws: WebSocket, action: Action): Unit = {
+    val json: String = Map("id" -> id, "action" -> action.name).js.toDenseString
     ws.send(json)
   }
 
@@ -160,64 +153,48 @@ class Game {
     val host = dom.window.location.host
     val ws = new WebSocket(s"ws://$host/ws")
 
-    ws.onmessage = {(e: MessageEvent) =>
-      println("received: " + e.data)
+    var id: String = ""
+
+    userGB.drawGame(Array.ofDim[Boolean](nGameRows, nGameCols))
+    userGB.drawNextPiece(Array.ofDim[Boolean](nNextPieceRows, nNextPieceCols))
+    opponentGB.drawGame(Array.ofDim[Boolean](nGameRows, nGameCols))
+    opponentGB.drawNextPiece(Array.ofDim[Boolean](nNextPieceRows, nNextPieceCols))
+
+    ws.onmessage = { (e: MessageEvent) =>
+      println(e.data.toString)
+      val data = JValue.fromString(e.data.toString)
+
+      if (data("id") != JUndefined) {
+        id = data("id").value.asInstanceOf[String]
+      } else {
+        val opponent = data("opponent").value.asInstanceOf[Boolean]
+
+        // FIXME change to use seqs instead of arrays everywhere
+        if (data("gameGrid") != JUndefined) {
+          val grid = data("gameGrid").value.asInstanceOf[Seq[Seq[Boolean]]].map(_.toArray).toArray
+          if (opponent) opponentGB.drawGame(grid)
+          else userGB.drawGame(grid)
+        }
+
+        if (data("nextPieceGrid") != JUndefined) {
+          val grid = data("nextPieceGrid").value.asInstanceOf[Seq[Seq[Boolean]]].map(_.toArray).toArray
+          if (opponent) opponentGB.drawNextPiece(grid)
+          else userGB.drawNextPiece(grid)
+        }
+      }
     }
 
-    var gameGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
-    val nextPieceGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
-
-    val opponentGameGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
-    val opponentNextPieceGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
-
-    var currentPiece = randomPiece()
-    var nextPiece: Piece = randomPiece()
-
-    var piece = new GamePiece(currentPiece, gameGrid)
-    var next = new NextPiece(nextPiece, nextPieceGrid)
-
-    updateGridAtPositions(gameGrid, piece.getPositions, value = true)
-    updateGridAtPositions(nextPieceGrid, next.getPositions, value = true)
-
-    userGB.drawGame(gameGrid)
-    userGB.drawNextPiece(nextPieceGrid)
-
-    opponentGB.drawGame(opponentGameGrid)
-    opponentGB.drawNextPiece(opponentNextPieceGrid)
 
     dom.window.onkeydown = { (e: dom.KeyboardEvent) =>
       // FIXME remove direct drawing after
 
       e.keyCode match {
-        case 37 | 65 => piece.moveLeft(); sendAction(ws, Left)
-        case 38 | 87 => piece.rotate(); sendAction(ws, Rotate)
-        case 39 | 68 => piece.moveRight(); sendAction(ws, Right)
-        case 40 | 83 => piece.fall(); sendAction(ws, Fall)
+        case 37 | 65 => sendAction(id, ws, Left)
+        case 38 | 87 => sendAction(id, ws, Rotate)
+        case 39 | 68 => sendAction(id, ws, Right)
+        case 40 | 83 => sendAction(id, ws, Fall)
         case _ => println(e.keyCode);
       }
-    }
-
-    setInterval(gameSpeed) {
-      val moved = piece.moveDown()
-
-      if (!moved) {
-        gameGrid = deleteCompletedLines(gameGrid)
-
-        updateGridAtPositions(nextPieceGrid, next.getPositions, value = false)
-
-        currentPiece = nextPiece
-        nextPiece = randomPiece()
-
-        piece = new GamePiece(currentPiece, gameGrid)
-        next = new NextPiece(nextPiece, nextPieceGrid)
-
-        updateGridAtPositions(gameGrid, piece.getPositions, value = true)
-        updateGridAtPositions(nextPieceGrid, next.getPositions, value = true)
-
-        userGB.drawNextPiece(nextPieceGrid)
-      }
-
-      userGB.drawGame(gameGrid)
     }
   }
 }

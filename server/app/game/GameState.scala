@@ -1,6 +1,6 @@
 package game
 
-import GameSettings._
+import shared.GameSettings._
 import game.PiecesWithPosition._
 
 class GameState(var currentPiece: Piece, var nextPiece: Piece) {

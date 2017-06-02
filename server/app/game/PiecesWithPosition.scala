@@ -1,6 +1,6 @@
 package game
 
-import GameSettings._
+import shared.GameSettings._
 
 object PiecesWithPosition {
 
@@ -79,11 +79,12 @@ object PiecesWithPosition {
     def moveRight(): Boolean = move(transformRight, inBoundRight)
     def moveDown(): Boolean = move(transformDown, inBoundBottom)
 
-    def fall(): Unit = {
+    def fall(): Boolean = {
       var moved = false
       do {
         moved = moveDown()
       } while (moved)
+      true
     }
 
     def rotate(): Boolean = piece match {

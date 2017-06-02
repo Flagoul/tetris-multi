@@ -1,7 +1,7 @@
 package shared
 
 object Actions {
-  class Action(val name: String)
+  case class Action(name: String)
   object Start extends Action("start")
   object Left extends Action("left")
   object Rotate extends Action("rotate")

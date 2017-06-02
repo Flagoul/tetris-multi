@@ -1,13 +1,12 @@
 package tetris
 
-import tetris.game._
 import org.scalajs.dom
-import org.scalajs.dom.WebSocket
 import shared.SharedMessages
+import tetris.game._
 
 import scala.scalajs.js
 
-object ScalaJSExample extends js.JSApp {
+object Main extends js.JSApp {
   def main(): Unit = {
     // FIXME find a way to load code according to url
     shoutOut()

@@ -1,4 +1,4 @@
-package game
+package shared
 
 object GameSettings {
   val nGameRows: Int = 22
