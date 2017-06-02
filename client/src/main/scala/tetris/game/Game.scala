@@ -5,6 +5,7 @@ import org.scalajs.dom
 import org.scalajs.dom.WebSocket
 import org.scalajs.dom.raw.{HTMLButtonElement, MessageEvent, MouseEvent}
 import shared.Actions._
+import shared.GameAPIKeys
 import shared.GameSettings._
 
 
@@ -18,7 +19,11 @@ class Game {
   private var id: String = ""
 
   def sendAction(action: Action): Unit = {
-    val json: String = Map("id" -> id, "action" -> action.name).js.toDenseString
+    val json: String = Map(
+      GameAPIKeys.id -> id,
+      GameAPIKeys.action -> action.name
+    ).js.toDenseString
+
     ws.send(json)
   }
 
@@ -26,17 +31,17 @@ class Game {
     if (data("id") != JUndefined) {
       id = data("id").value.asInstanceOf[String]
     } else {
-      val opponent = data("opponent").value.asInstanceOf[Boolean]
+      val opponent = data(GameAPIKeys.opponent).value.asInstanceOf[Boolean]
 
       // FIXME change to use seqs instead of arrays everywhere
-      if (data("gameGrid") != JUndefined) {
-        val grid = data("gameGrid").value.asInstanceOf[Seq[Seq[Boolean]]].map(_.toArray).toArray
+      if (data(GameAPIKeys.gameGrid) != JUndefined) {
+        val grid = data(GameAPIKeys.gameGrid).value.asInstanceOf[Seq[Seq[Boolean]]].map(_.toArray).toArray
         if (opponent) opponentGB.drawGame(grid)
         else userGB.drawGame(grid)
       }
 
-      if (data("nextPieceGrid") != JUndefined) {
-        val grid = data("nextPieceGrid").value.asInstanceOf[Seq[Seq[Boolean]]].map(_.toArray).toArray
+      if (data(GameAPIKeys.nextPieceGrid) != JUndefined) {
+        val grid = data(GameAPIKeys.nextPieceGrid).value.asInstanceOf[Seq[Seq[Boolean]]].map(_.toArray).toArray
         if (opponent) opponentGB.drawNextPiece(grid)
         else userGB.drawNextPiece(grid)
       }

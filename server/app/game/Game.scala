@@ -4,6 +4,7 @@ import akka.actor.ActorRef
 import shared.GameSettings.{nGameCols, nGameRows}
 import play.api.libs.json.{JsBoolean, JsObject, Json}
 import shared.Actions._
+import shared.GameAPIKeys
 
 import scala.util.Random
 
@@ -61,15 +62,15 @@ class Game(val gameUser1: GameUser, val gameUser2: GameUser) {
   }
 
   def initBroadcast(): Unit = {
-    broadcast(users(gameUser1.id), Json.obj("gameGrid" -> users(gameUser1.id).state.gameGrid))
-    broadcast(users(gameUser1.id), Json.obj("nexPieceGrid" -> users(gameUser1.id).state.nextPieceGrid))
-    broadcast(users(gameUser2.id), Json.obj("gameGrid" -> users(gameUser2.id).state.gameGrid))
-    broadcast(users(gameUser2.id), Json.obj("nexPieceGrid" -> users(gameUser2.id).state.nextPieceGrid))
+    broadcast(user1, Json.obj(GameAPIKeys.gameGrid -> user1.state.gameGrid))
+    broadcast(user1, Json.obj(GameAPIKeys.nextPieceGrid -> user1.state.nextPieceGrid))
+    broadcast(user2, Json.obj(GameAPIKeys.gameGrid -> user2.state.gameGrid))
+    broadcast(user2, Json.obj(GameAPIKeys.nextPieceGrid -> user2.state.nextPieceGrid))
   }
 
   def broadcast(user: GameUserWithState, jsonObj: JsObject): Unit = {
-    user.out ! Json.toJson(jsonObj + ("opponent" -> JsBoolean(false))).toString()
-    opponent(user.id).out ! Json.toJson(jsonObj + ("opponent" -> JsBoolean(true))).toString()
+    user.out ! Json.toJson(jsonObj + (GameAPIKeys.opponent -> JsBoolean(false))).toString()
+    opponent(user.id).out ! Json.toJson(jsonObj + (GameAPIKeys.opponent -> JsBoolean(true))).toString()
   }
 
   def randomPiece(): Piece = Random.shuffle(List(BarPiece, InvLPiece, LPiece, SPiece, SquarePiece, TPiece, ZPiece)).head
