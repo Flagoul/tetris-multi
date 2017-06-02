@@ -27,24 +27,26 @@ class Game {
     ws.send(json)
   }
 
+  def drawGridIfExists(data: JValue, key: String, opponent: Boolean): Unit = {
+    if (data(key) != JUndefined) {
+      // FIXME change to use seqs instead of arrays everywhere
+      val grid = data(key).value.asInstanceOf[Seq[Seq[Boolean]]].map(_.toArray).toArray
+      val gb = if (opponent) opponentGB else userGB
+
+      key match {
+        case GameAPIKeys.gameGrid => gb.drawGame(grid)
+        case GameAPIKeys.nextPieceGrid => gb.drawNextPiece(grid)
+      }
+    }
+  }
+
   def handleMessage(data: JValue): Unit = {
     if (data("id") != JUndefined) {
       id = data("id").value.asInstanceOf[String]
     } else {
       val opponent = data(GameAPIKeys.opponent).value.asInstanceOf[Boolean]
-
-      // FIXME change to use seqs instead of arrays everywhere
-      if (data(GameAPIKeys.gameGrid) != JUndefined) {
-        val grid = data(GameAPIKeys.gameGrid).value.asInstanceOf[Seq[Seq[Boolean]]].map(_.toArray).toArray
-        if (opponent) opponentGB.drawGame(grid)
-        else userGB.drawGame(grid)
-      }
-
-      if (data(GameAPIKeys.nextPieceGrid) != JUndefined) {
-        val grid = data(GameAPIKeys.nextPieceGrid).value.asInstanceOf[Seq[Seq[Boolean]]].map(_.toArray).toArray
-        if (opponent) opponentGB.drawNextPiece(grid)
-        else userGB.drawNextPiece(grid)
-      }
+      drawGridIfExists(data, GameAPIKeys.gameGrid, opponent)
+      drawGridIfExists(data, GameAPIKeys.nextPieceGrid, opponent)
     }
   }
 
@@ -54,23 +56,18 @@ class Game {
     opponentGB.drawGame(Array.ofDim[Boolean](nGameRows, nGameCols))
     opponentGB.drawNextPiece(Array.ofDim[Boolean](nNextPieceRows, nNextPieceCols))
 
-    val startButton = dom.document.querySelector("#start-button").asInstanceOf[HTMLButtonElement]
-    startButton.onclick = { (_: MouseEvent) =>
-      sendAction(Start)
-    }
+    val startButton = dom.document.querySelector("#ready-button").asInstanceOf[HTMLButtonElement]
+    startButton.onclick = (_: MouseEvent) => sendAction(Start)
 
-    ws.onmessage = { (e: MessageEvent) =>
-      val data = JValue.fromString(e.data.toString)
-      handleMessage(data)
-    }
+    ws.onmessage = (e: MessageEvent) => handleMessage(JValue.fromString(e.data.toString))
 
-    dom.window.onkeydown = { (e: dom.KeyboardEvent) =>
+    dom.window.onkeydown = (e: dom.KeyboardEvent) => {
       e.keyCode match {
         case 37 | 65 => sendAction(Left)
         case 38 | 87 => sendAction(Rotate)
         case 39 | 68 => sendAction(Right)
         case 40 | 83 => sendAction(Fall)
-        case _ => println(e.keyCode)
+        case _ =>
       }
     }
   }

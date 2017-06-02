@@ -53,7 +53,8 @@ class Game(val gameUser1: GameUser, val gameUser2: GameUser) {
     }
 
     if (moved) {
-      broadcast(user, Json.obj("gameGrid" -> gs.gameGrid))
+      if (action == Fall) handlePieceBottom(user)
+      else broadcast(user, Json.obj("gameGrid" -> gs.gameGrid))
     }
   }
 
@@ -66,13 +67,35 @@ class Game(val gameUser1: GameUser, val gameUser2: GameUser) {
   }
 
   def initGame(): Unit = {
-    broadcast(user1, Json.obj(GameAPIKeys.gameGrid -> user1.state.gameGrid))
-    broadcast(user1, Json.obj(GameAPIKeys.nextPieceGrid -> user1.state.nextPieceGrid))
-    broadcast(user2, Json.obj(GameAPIKeys.gameGrid -> user2.state.gameGrid))
-    broadcast(user2, Json.obj(GameAPIKeys.nextPieceGrid -> user2.state.nextPieceGrid))
+    broadcast(user1, Json.obj(
+      GameAPIKeys.gameGrid -> user1.state.gameGrid,
+      GameAPIKeys.nextPieceGrid -> user1.state.nextPieceGrid
+    ))
+    broadcast(user2, Json.obj(
+      GameAPIKeys.gameGrid -> user2.state.gameGrid,
+      GameAPIKeys.nextPieceGrid -> user2.state.nextPieceGrid
+    ))
 
     gameTick(user1)
     gameTick(user2)
+  }
+
+  private def handlePieceBottom(user: GameUserWithState): Unit = {
+    val state = user.state
+
+    state.gameGrid = deleteCompletedLines(state.gameGrid)
+    state.nextPiece.removeFromGrid()
+
+    state.curPiece = new GamePiece(state.nextPiece.piece, state.gameGrid)
+    state.curPiece.addToGrid()
+
+    state.nextPiece = new NextPiece(randomPiece(), state.nextPieceGrid)
+    state.nextPiece.addToGrid()
+
+    broadcast(user, Json.obj(
+      GameAPIKeys.gameGrid -> user.state.gameGrid,
+      GameAPIKeys.nextPieceGrid -> user.state.nextPieceGrid
+    ))
   }
 
   private def gameTick(user: GameUserWithState): Unit = {
@@ -81,21 +104,8 @@ class Game(val gameUser1: GameUser, val gameUser2: GameUser) {
     import system.dispatcher
 
     system.scheduler.scheduleOnce(user.state.gameSpeed.milliseconds) {
-      val state = user.state
-      if (!state.curPiece.moveDown()) {
-        state.gameGrid = deleteCompletedLines(state.gameGrid)
-        state.nextPiece.removeFromGrid()
-
-        state.curPiece = new GamePiece(state.nextPiece.piece, state.gameGrid)
-        state.curPiece.addToGrid()
-
-        state.nextPiece = new NextPiece(randomPiece(), state.nextPieceGrid)
-        state.nextPiece.addToGrid()
-
-        broadcast(user, Json.obj(GameAPIKeys.nextPieceGrid -> user.state.nextPieceGrid))
-      }
-
-      broadcast(user, Json.obj(GameAPIKeys.gameGrid -> user.state.gameGrid))
+      if (!user.state.curPiece.moveDown()) handlePieceBottom(user)
+      else broadcast(user, Json.obj(GameAPIKeys.gameGrid -> user.state.gameGrid))
       gameTick(user)
     }
   }
