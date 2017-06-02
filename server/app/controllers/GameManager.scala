@@ -10,7 +10,7 @@ import play.api.Logger.logger
 import play.api.libs.json._
 import play.api.libs.streams.ActorFlow
 import play.api.mvc.WebSocket
-import shared.Actions
+import shared.{Actions, GameAPIKeys}
 
 import scala.collection.mutable
 
@@ -34,8 +34,8 @@ class GameManager @Inject()(implicit system: ActorSystem, materializer: Material
           val data: JsValue = Json.parse(msg)
 
           handleAction(
-            (data \ "id").as[String],
-            (data \ "action").as[String]
+            (data \ GameAPIKeys.id).as[String],
+            (data \ GameAPIKeys.action).as[String]
           )
 
         } catch {
@@ -63,11 +63,10 @@ class GameManager @Inject()(implicit system: ActorSystem, materializer: Material
         println("playing")
       }
 
-      out ! Json.stringify(Json.obj("id" -> user.id))
+      out ! Json.stringify(Json.obj(GameAPIKeys.id -> user.id))
     }
 
     def handleAction(id: String, action: String): Unit = {
-
       val game = games(id)
       action match {
         case "start" => game.setReady(id)

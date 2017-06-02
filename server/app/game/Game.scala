@@ -1,19 +1,23 @@
 package game
 
 import akka.actor.ActorRef
+import game.Pieces._
+import game.PiecesWithPosition.{GamePiece, NextPiece}
 import shared.GameSettings.{nGameCols, nGameRows}
 import play.api.libs.json.{JsBoolean, JsObject, Json}
 import shared.Actions._
 import shared.GameAPIKeys
 
 import scala.util.Random
+import scala.concurrent.duration._
+
 
 class Game(val gameUser1: GameUser, val gameUser2: GameUser) {
 
   case class GameUserWithState(user: GameUser) {
     val id: String = user.id
     val out: ActorRef = user.ref
-    val state: GameState = GameState(randomPiece(), randomPiece())
+    val state: GameState = new GameState(randomPiece(), randomPiece())
   }
 
   private val user1: GameUserWithState = GameUserWithState(gameUser1)
@@ -42,10 +46,10 @@ class Game(val gameUser1: GameUser, val gameUser2: GameUser) {
     }
 
     val moved: Boolean = action match {
-      case Left => gs.piece.moveLeft()
-      case Right => gs.piece.moveRight()
-      case Fall => gs.piece.fall()
-      case Rotate => gs.piece.rotate()
+      case Left => gs.curPiece.moveLeft()
+      case Right => gs.curPiece.moveRight()
+      case Fall => gs.curPiece.fall()
+      case Rotate => gs.curPiece.rotate()
     }
 
     if (moved) {
@@ -57,15 +61,43 @@ class Game(val gameUser1: GameUser, val gameUser2: GameUser) {
     users(id).state.ready = true
     println(id + " is ready")
     if (opponent(id).state.ready) {
-      initBroadcast()
+      initGame()
     }
   }
 
-  def initBroadcast(): Unit = {
+  def initGame(): Unit = {
     broadcast(user1, Json.obj(GameAPIKeys.gameGrid -> user1.state.gameGrid))
     broadcast(user1, Json.obj(GameAPIKeys.nextPieceGrid -> user1.state.nextPieceGrid))
     broadcast(user2, Json.obj(GameAPIKeys.gameGrid -> user2.state.gameGrid))
     broadcast(user2, Json.obj(GameAPIKeys.nextPieceGrid -> user2.state.nextPieceGrid))
+
+    gameTick(user1)
+    gameTick(user2)
+  }
+
+  private def gameTick(user: GameUserWithState): Unit = {
+    //Use the system's dispatcher as ExecutionContext
+    val system = akka.actor.ActorSystem("system")
+    import system.dispatcher
+
+    system.scheduler.scheduleOnce(user.state.gameSpeed.milliseconds) {
+      val state = user.state
+      if (!state.curPiece.moveDown()) {
+        state.gameGrid = deleteCompletedLines(state.gameGrid)
+        state.nextPiece.removeFromGrid()
+
+        state.curPiece = new GamePiece(state.nextPiece.piece, state.gameGrid)
+        state.curPiece.addToGrid()
+
+        state.nextPiece = new NextPiece(randomPiece(), state.nextPieceGrid)
+        state.nextPiece.addToGrid()
+
+        broadcast(user, Json.obj(GameAPIKeys.nextPieceGrid -> user.state.nextPieceGrid))
+      }
+
+      broadcast(user, Json.obj(GameAPIKeys.gameGrid -> user.state.gameGrid))
+      gameTick(user)
+    }
   }
 
   def broadcast(user: GameUserWithState, jsonObj: JsObject): Unit = {
@@ -84,4 +116,5 @@ class Game(val gameUser1: GameUser, val gameUser2: GameUser) {
 
     res
   }
+
 }

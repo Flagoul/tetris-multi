@@ -60,14 +60,11 @@ class Game {
     }
 
     ws.onmessage = { (e: MessageEvent) =>
-      println(e.data.toString)
       val data = JValue.fromString(e.data.toString)
       handleMessage(data)
     }
 
     dom.window.onkeydown = { (e: dom.KeyboardEvent) =>
-      // FIXME remove direct drawing after
-
       e.keyCode match {
         case 37 | 65 => sendAction(Left)
         case 38 | 87 => sendAction(Rotate)

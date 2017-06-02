@@ -1,16 +1,17 @@
 package game
 
 import shared.GameSettings._
+import game.Pieces._
 
 object PiecesWithPosition {
 
   // A position in a grid on the form (row, col)
   type Position = (Int, Int)
 
-  class PieceWithPosition(piece: Piece, grid: Array[Array[Boolean]], initPos: Position) {
+  class PieceWithPosition(val piece: Piece, grid: Array[Array[Boolean]], initPos: Position) {
     protected var positions: List[Position] = initPiecePositions()
 
-    updateGridAtCurrentPosition(value = true)
+    addToGrid()
 
     /**
       * Creates positions for the piece, based on the position where to start drawing.
@@ -32,7 +33,15 @@ object PiecesWithPosition {
 
     def getPositions: List[Position] = positions
 
-    def updateGridAtCurrentPosition(value: Boolean): Unit = {
+    def addToGrid(): Unit = {
+      updateGridAtCurrentPosition(true)
+    }
+
+    def removeFromGrid(): Unit = {
+      updateGridAtCurrentPosition(false)
+    }
+
+    private def updateGridAtCurrentPosition(value: Boolean): Unit = {
       for (pos <- positions) {
         grid(pos._1)(pos._2) = value
       }
@@ -45,9 +54,9 @@ object PiecesWithPosition {
   ) {
 
     def updateGrid(newPositions: List[Position]): Unit = {
-      updateGridAtCurrentPosition(value = false)
+      removeFromGrid()
       positions = newPositions
-      updateGridAtCurrentPosition(value = true)
+      addToGrid()
     }
 
     def collides(newPositions: List[Position], inBounds: Position => Boolean): Boolean = {
