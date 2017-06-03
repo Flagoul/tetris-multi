@@ -83,7 +83,13 @@ class Game(val gameUser1: GameUser, val gameUser2: GameUser) {
   private def handlePieceBottom(user: GameUserWithState): Unit = {
     val state = user.state
 
-    state.gameGrid = deleteCompletedLines(state.gameGrid)
+    state.piecesPlaced += 1
+
+    // amount of spaces piece has above itself
+    state.points += state.curPiece.getPositions.minBy(_._1)._1
+
+    deleteCompletedLines(state)
+
     state.nextPiece.removeFromGrid()
 
     state.curPiece = new GamePiece(state.nextPiece.piece, state.gameGrid)
@@ -94,7 +100,9 @@ class Game(val gameUser1: GameUser, val gameUser2: GameUser) {
 
     broadcast(user, Json.obj(
       GameAPIKeys.gameGrid -> user.state.gameGrid,
-      GameAPIKeys.nextPieceGrid -> user.state.nextPieceGrid
+      GameAPIKeys.nextPieceGrid -> user.state.nextPieceGrid,
+      GameAPIKeys.piecesPlaced -> state.piecesPlaced,
+      GameAPIKeys.points -> state.points
     ))
   }
 
@@ -117,14 +125,10 @@ class Game(val gameUser1: GameUser, val gameUser2: GameUser) {
 
   def randomPiece(): Piece = Random.shuffle(List(BarPiece, InvLPiece, LPiece, SPiece, SquarePiece, TPiece, ZPiece)).head
 
-  def deleteCompletedLines(gameGrid: Array[Array[Boolean]]): Array[Array[Boolean]] = {
-    val res = gameGrid.filterNot(row => row.count(x => x) == nGameCols)
-
-    if (res.length < nGameRows) {
-      return Array.ofDim[Boolean](nGameRows - res.length, nGameCols) ++ res
-    }
-
-    res
+  def deleteCompletedLines(state: GameState): Unit = {
+    val res = state.gameGrid.filterNot(row => row.count(x => x) == nGameCols)
+    val nDeleted = nGameRows - res.length
+    state.gameGrid = Array.ofDim[Boolean](nDeleted, nGameCols) ++ res
+    state.points += (50 * Math.pow(nDeleted, 2)).toInt
   }
-
 }

@@ -6,4 +6,6 @@ object GameAPIKeys {
   val gameGrid: String = "gameGrid"
   val nextPieceGrid: String = "nextPieceGrid"
   val opponent: String = "opponent"
+  val points: String = "points"
+  val piecesPlaced: String = "piecesPlaces"
 }

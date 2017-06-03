@@ -13,5 +13,8 @@ class GameState(cur: Piece, next: Piece) {
   var curPiece: GamePiece = new GamePiece(cur, gameGrid)
   var nextPiece: NextPiece = new NextPiece(next, nextPieceGrid)
 
+  var piecesPlaced: Int = 0
+  var points: Int = 0
+
   var ready: Boolean = false
 }

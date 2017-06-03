@@ -40,13 +40,27 @@ class Game {
     }
   }
 
+  def changeIntValueIfExists(data: JValue, key: String, opponent: Boolean): Unit = {
+    if (data(key) != JUndefined) {
+      val number = data(key).value.asInstanceOf[Int]
+      val gb = if (opponent) opponentGB else userGB
+
+      key match {
+        case GameAPIKeys.piecesPlaced => gb.setPiecesPlaced(number)
+        case GameAPIKeys.points => gb.setPoints(number)
+      }
+    }
+  }
+
   def handleMessage(data: JValue): Unit = {
-    if (data("id") != JUndefined) {
-      id = data("id").value.asInstanceOf[String]
+    if (data(GameAPIKeys.id) != JUndefined) {
+      id = data(GameAPIKeys.id).value.asInstanceOf[String]
     } else {
       val opponent = data(GameAPIKeys.opponent).value.asInstanceOf[Boolean]
       drawGridIfExists(data, GameAPIKeys.gameGrid, opponent)
       drawGridIfExists(data, GameAPIKeys.nextPieceGrid, opponent)
+      changeIntValueIfExists(data, GameAPIKeys.piecesPlaced, opponent)
+      changeIntValueIfExists(data, GameAPIKeys.points, opponent)
     }
   }
 
