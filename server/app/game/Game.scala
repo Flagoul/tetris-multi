@@ -3,7 +3,7 @@ package game
 import akka.actor.{ActorRef, PoisonPill}
 import game.Pieces._
 import game.PiecesWithPosition.{GamePiece, NextPiece}
-import shared.GameRules.{nGameCols, nGameRows}
+import shared.GameRules.nGameCols
 import play.api.libs.json.{JsBoolean, JsObject, Json}
 import shared.Actions._
 import shared.{GameAPIKeys, GameRules}
@@ -91,10 +91,10 @@ class Game(p1: Player, p2: Player) {
     val nBlocksAbove = state.curPiece.getPositions.minBy(_._1)._1
 
     if (nBlocksAbove <= 1) {
-      stopGame()
+      lose(player)
     }
 
-    val nDeleted = deleteCompletedLines(state)
+    val nDeleted = removeCompletedLines(player)
 
     state.piecesPlaced += 1
     state.points += GameRules.pointsForPieceDown(nBlocksAbove, nDeleted, state.gameSpeed)
@@ -133,19 +133,9 @@ class Game(p1: Player, p2: Player) {
     opponent(user).out ! Json.toJson(jsonObj + (GameAPIKeys.opponent -> JsBoolean(true))).toString()
   }
 
-  def stopGame(): Unit = {
-    val p1Points = player1.state.points
-    val p2Points = player2.state.points
-
-    if (p1Points == p2Points) {
-      val toSend = Json.obj(GameAPIKeys.draw -> JsBoolean(true)).toString()
-      player1.out ! toSend
-      player2.out ! toSend
-    } else {
-      val winner = if (p1Points > p2Points) player1 else player2
-      winner.out ! Json.obj(GameAPIKeys.won -> JsBoolean(true)).toString()
-      opponent(winner).out ! Json.obj(GameAPIKeys.won -> JsBoolean(false)).toString()
-    }
+  def lose(player: PlayerWithState): Unit = {
+    player.out ! Json.obj(GameAPIKeys.won -> JsBoolean(false)).toString()
+    opponent(player).out ! Json.obj(GameAPIKeys.won -> JsBoolean(true)).toString()
 
     player1.out ! PoisonPill
     player2.out ! PoisonPill
@@ -153,10 +143,27 @@ class Game(p1: Player, p2: Player) {
 
   def randomPiece(): Piece = Random.shuffle(List(BarPiece, InvLPiece, LPiece, SPiece, SquarePiece, TPiece, ZPiece)).head
 
-  def deleteCompletedLines(state: GameState): Int = {
-    val res = state.gameGrid.filterNot(row => row.count(x => x) == nGameCols)
-    val nDeleted = nGameRows - res.length
-    state.gameGrid = Array.ofDim[Boolean](nDeleted, nGameCols) ++ res
-    nDeleted
+  def removeCompletedLines(player: PlayerWithState): Int = {
+    val state = player.state
+    val (removed, kept) = state.gameGrid
+      .zipWithIndex
+      .partition(p => p._1.count(x => x) == nGameCols)
+
+    val linesBeforeCompleted: Array[Array[Boolean]] = removed.map(p => {
+      val row: Array[Boolean] = p._1
+      val i = p._2
+      row.indices.map(col => !state.curPiece.getPositions.contains((i, col))).toArray
+    })
+
+    player.state.gameGrid = Array.ofDim[Boolean](removed.length, nGameCols) ++ kept.map(_._1)
+
+    val toAdd = removed.length match {
+      case 1 | 2 | 3 => linesBeforeCompleted.take(removed.length - 1)
+      case _ => linesBeforeCompleted
+    }
+
+    opponent(player).state.gameGrid = opponent(player).state.gameGrid.drop(toAdd.length) ++ toAdd
+
+    removed.length
   }
 }
