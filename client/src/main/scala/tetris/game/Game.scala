@@ -6,7 +6,7 @@ import org.scalajs.dom.WebSocket
 import org.scalajs.dom.raw.{HTMLButtonElement, MessageEvent, MouseEvent}
 import shared.Actions._
 import shared.GameAPIKeys
-import shared.GameSettings._
+import shared.GameRules._
 
 
 class Game {
@@ -55,7 +55,19 @@ class Game {
   def handleMessage(data: JValue): Unit = {
     if (data(GameAPIKeys.id) != JUndefined) {
       id = data(GameAPIKeys.id).value.asInstanceOf[String]
-    } else {
+    }
+    else if (data(GameAPIKeys.won) != JUndefined) {
+      val won = data(GameAPIKeys.won).value.asInstanceOf[Boolean]
+      if (won) {
+        println("You won the game!")
+      } else {
+        println("You lost the game.")
+      }
+    }
+    else if (data(GameAPIKeys.draw) != JUndefined) {
+      println("Draw!")
+    }
+    else {
       val opponent = data(GameAPIKeys.opponent).value.asInstanceOf[Boolean]
       drawGridIfExists(data, GameAPIKeys.gameGrid, opponent)
       drawGridIfExists(data, GameAPIKeys.nextPieceGrid, opponent)

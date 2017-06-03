@@ -8,4 +8,6 @@ object GameAPIKeys {
   val opponent: String = "opponent"
   val points: String = "points"
   val piecesPlaced: String = "piecesPlaces"
+  val won: String = "won"
+  val draw: String = "draw"
 }

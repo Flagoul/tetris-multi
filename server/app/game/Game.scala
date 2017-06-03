@@ -1,48 +1,48 @@
 package game
 
-import akka.actor.ActorRef
+import akka.actor.{ActorRef, PoisonPill}
 import game.Pieces._
 import game.PiecesWithPosition.{GamePiece, NextPiece}
-import shared.GameSettings.{nGameCols, nGameRows}
+import shared.GameRules.{nGameCols, nGameRows}
 import play.api.libs.json.{JsBoolean, JsObject, Json}
 import shared.Actions._
-import shared.GameAPIKeys
+import shared.{GameAPIKeys, GameRules}
 
 import scala.util.Random
 import scala.concurrent.duration._
 
 
-class Game(val gameUser1: GameUser, val gameUser2: GameUser) {
+class Game(p1: Player, p2: Player) {
 
-  case class GameUserWithState(user: GameUser) {
-    val id: String = user.id
-    val out: ActorRef = user.ref
+  case class PlayerWithState(player: Player) {
+    val id: String = player.id
+    val out: ActorRef = player.ref
     val state: GameState = new GameState(randomPiece(), randomPiece())
   }
 
-  private val user1: GameUserWithState = GameUserWithState(gameUser1)
-  private val user2: GameUserWithState = GameUserWithState(gameUser2)
+  private val player1: PlayerWithState = PlayerWithState(p1)
+  private val player2: PlayerWithState = PlayerWithState(p2)
 
-  private val users: Map[String, GameUserWithState] = Map(
-    user1.id -> user1,
-    user2.id -> user2
+  private val players: Map[String, PlayerWithState] = Map(
+    player1.id -> player1,
+    player2.id -> player2
   )
 
   //Use the system's dispatcher as ExecutionContext
   private val system = akka.actor.ActorSystem("system")
   import system.dispatcher
 
-  def opponent(id: String): GameUserWithState = {
-    if (id == user1.id) user2
-    else user1
+  private def opponent(player: PlayerWithState): PlayerWithState = {
+    if (player  == player1) player2
+    else player1
   }
 
-  def gameState(userId: String): GameState = {
-    users(userId).state
+  def gameState(id: String): GameState = {
+    players(id).state
   }
 
-  def movePiece(userId: String, action: Action): Unit = {
-    val user = users(userId)
+  def movePiece(id: String, action: Action): Unit = {
+    val user = players(id)
     val gs = user.state
 
     if (!gs.ready) {
@@ -63,74 +63,100 @@ class Game(val gameUser1: GameUser, val gameUser2: GameUser) {
   }
 
   def setReady(id: String): Unit = {
-    users(id).state.ready = true
+    val user = players(id)
+    user.state.ready = true
     println(id + " is ready")
-    if (opponent(id).state.ready) {
+
+    if (opponent(user).state.ready) {
       initGame()
     }
   }
 
   def initGame(): Unit = {
-    broadcast(user1, Json.obj(
-      GameAPIKeys.gameGrid -> user1.state.gameGrid,
-      GameAPIKeys.nextPieceGrid -> user1.state.nextPieceGrid
+    broadcast(player1, Json.obj(
+      GameAPIKeys.gameGrid -> player1.state.gameGrid,
+      GameAPIKeys.nextPieceGrid -> player1.state.nextPieceGrid
     ))
-    broadcast(user2, Json.obj(
-      GameAPIKeys.gameGrid -> user2.state.gameGrid,
-      GameAPIKeys.nextPieceGrid -> user2.state.nextPieceGrid
+    broadcast(player2, Json.obj(
+      GameAPIKeys.gameGrid -> player2.state.gameGrid,
+      GameAPIKeys.nextPieceGrid -> player2.state.nextPieceGrid
     ))
 
-    gameTick(user1)
-    gameTick(user2)
+    gameTick(player1)
+    gameTick(player2)
   }
 
-  private def handlePieceBottom(user: GameUserWithState): Unit = {
-    val state = user.state
+  private def handlePieceBottom(player: PlayerWithState): Unit = {
+    val state = player.state
+    val nBlocksAbove = state.curPiece.getPositions.minBy(_._1)._1
 
-    // TODO check game lost
+    if (nBlocksAbove <= 1) {
+      stopGame()
+    }
+
+    val nDeleted = deleteCompletedLines(state)
 
     state.piecesPlaced += 1
-
-    // amount of spaces piece has above itself
-    state.points += state.curPiece.getPositions.minBy(_._1)._1
-
-    deleteCompletedLines(state)
-
-    state.nextPiece.removeFromGrid()
+    state.points += GameRules.pointsForPieceDown(nBlocksAbove, nDeleted, state.gameSpeed)
 
     state.curPiece = new GamePiece(state.nextPiece.piece, state.gameGrid)
     state.curPiece.addToGrid()
 
+    state.nextPiece.removeFromGrid()
     state.nextPiece = new NextPiece(randomPiece(), state.nextPieceGrid)
     state.nextPiece.addToGrid()
 
-    broadcast(user, Json.obj(
-      GameAPIKeys.gameGrid -> user.state.gameGrid,
-      GameAPIKeys.nextPieceGrid -> user.state.nextPieceGrid,
+    state.gameSpeed = GameRules.nextSpeed(state.gameSpeed)
+
+    broadcast(player, Json.obj(
+      GameAPIKeys.gameGrid -> player.state.gameGrid,
+      GameAPIKeys.nextPieceGrid -> player.state.nextPieceGrid,
       GameAPIKeys.piecesPlaced -> state.piecesPlaced,
       GameAPIKeys.points -> state.points
     ))
   }
 
-  private def gameTick(user: GameUserWithState): Unit = {
+  private def gameTick(user: PlayerWithState): Unit = {
     system.scheduler.scheduleOnce(user.state.gameSpeed.milliseconds) {
-      if (!user.state.curPiece.moveDown()) handlePieceBottom(user)
-      else broadcast(user, Json.obj(GameAPIKeys.gameGrid -> user.state.gameGrid))
+      if (!user.state.curPiece.moveDown()) {
+        handlePieceBottom(user)
+      }
+      else {
+        broadcast(user, Json.obj(GameAPIKeys.gameGrid -> user.state.gameGrid))
+      }
       gameTick(user)
     }
   }
 
-  def broadcast(user: GameUserWithState, jsonObj: JsObject): Unit = {
+  def broadcast(user: PlayerWithState, jsonObj: JsObject): Unit = {
     user.out ! Json.toJson(jsonObj + (GameAPIKeys.opponent -> JsBoolean(false))).toString()
-    opponent(user.id).out ! Json.toJson(jsonObj + (GameAPIKeys.opponent -> JsBoolean(true))).toString()
+    opponent(user).out ! Json.toJson(jsonObj + (GameAPIKeys.opponent -> JsBoolean(true))).toString()
+  }
+
+  def stopGame(): Unit = {
+    val p1Points = player1.state.points
+    val p2Points = player2.state.points
+
+    if (p1Points == p2Points) {
+      val toSend = Json.obj(GameAPIKeys.draw -> JsBoolean(true)).toString()
+      player1.out ! toSend
+      player2.out ! toSend
+    } else {
+      val winner = if (p1Points > p2Points) player1 else player2
+      winner.out ! Json.obj(GameAPIKeys.won -> JsBoolean(true)).toString()
+      opponent(winner).out ! Json.obj(GameAPIKeys.won -> JsBoolean(false)).toString()
+    }
+
+    player1.out ! PoisonPill
+    player2.out ! PoisonPill
   }
 
   def randomPiece(): Piece = Random.shuffle(List(BarPiece, InvLPiece, LPiece, SPiece, SquarePiece, TPiece, ZPiece)).head
 
-  def deleteCompletedLines(state: GameState): Unit = {
+  def deleteCompletedLines(state: GameState): Int = {
     val res = state.gameGrid.filterNot(row => row.count(x => x) == nGameCols)
     val nDeleted = nGameRows - res.length
     state.gameGrid = Array.ofDim[Boolean](nDeleted, nGameCols) ++ res
-    state.points += (50 * Math.pow(nDeleted, 2)).toInt
+    nDeleted
   }
 }

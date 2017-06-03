@@ -1,6 +1,6 @@
 package game
 
-import shared.GameSettings._
+import shared.GameRules._
 import game.Pieces._
 
 object PiecesWithPosition {
