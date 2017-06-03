@@ -1,6 +1,7 @@
 package models
 
-import slick.jdbc.MySQLProfile.api._
+import managers.DBWrapper.api._
+
 
 
 case class User(id: Option[Long], username: String, password: String) extends AbstractModel(id)

@@ -5,8 +5,7 @@ import javax.inject._
 import models.{User, UserTable}
 import org.mindrot.jbcrypt.BCrypt
 import play.api.Application
-import slick.lifted.TableQuery
-import slick.jdbc.MySQLProfile.api._
+import DBWrapper.api._
 
 import scala.concurrent.{ExecutionContext, Future}
 

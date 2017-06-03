@@ -1,7 +1,6 @@
 package models
 
-
-import slick.jdbc.MySQLProfile.api._
+import managers.DBWrapper.api._
 
 
 abstract class AbstractModel(id: Option[Long])

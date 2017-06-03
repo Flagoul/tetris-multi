@@ -2,7 +2,7 @@ package models
 
 import java.sql.Timestamp
 
-import slick.jdbc.MySQLProfile.api._
+import managers.DBWrapper.api._
 
 
 case class UserSession(id: Option[Long], uuid: String, expiration: Option[Timestamp], user_id: Long) extends AbstractModel(id)
