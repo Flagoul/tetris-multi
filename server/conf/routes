@@ -8,15 +8,12 @@ GET     /assets/*file               controllers.Assets.versioned(path="/public",
 # Home page
 GET     /                           controllers.Application.index
 
-POST    /register                   controllers.Register.index
+GET    /register                    controllers.Registration.index
+POST    /register                   controllers.Registration.post
 
-POST    /login                      controllers.Login.index
-
-POST    /logout                     controllers.Logout.index
-
-GET     /account                    controllers.Account.index
-PUT     /account                    controllers.Account.update
-DELETE  /account                    controllers.Account.delete
+GET     /login                      controllers.Session.login
+POST    /login                      controllers.Session.loginPost
+GET    /logout                      controllers.Session.logout
 
 GET     /stats                      controllers.Stats.index
 

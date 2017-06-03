@@ -1,21 +1,28 @@
-@(title: String, stylesheets: Html = Html(""), scripts: Html = Html(""))(content: Html)
+@import controllers.authentication.AuthenticatedRequest
+
+@(title: String, stylesheets: Html = Html(""), scripts: Html = Html(""))(content: Html)(implicit request: AuthenticatedRequest[AnyContent])
 
 <!DOCTYPE html>
 
 <html>
-<head>
-    <title>@title</title>
+    <head>
+        <title>@title</title>
 
-    <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
+        <link rel="shortcut icon" type="image/png" href="@routes.Assets.versioned("images/favicon.png")">
 
-    <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/main.css")">
-    <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap.min.css")">
-    @stylesheets
+        <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/main.css")">
+        <link rel="stylesheet" href="@routes.Assets.versioned("stylesheets/bootstrap.min.css")">
+            @stylesheets
 
-    @scripts
-</head>
-<body>
-   @content
-   @scalajs.html.scripts("client", routes.Assets.versioned(_).toString, name => getClass.getResource(s"/public/$name") != null)
-</body>
+            @scripts
+    </head>
+    <body>
+        @menu()
+
+        <div class="container">
+            @content
+        </div>
+
+        @scalajs.html.scripts("client", routes.Assets.versioned(_).toString, name => getClass.getResource(s"/public/$name") != null)
+    </body>
 </html>

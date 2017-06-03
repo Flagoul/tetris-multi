@@ -1,0 +1,17 @@
+@(elements: helper.FieldElements)
+
+
+<div class="form-group row @if(elements.hasErrors) {error}">
+    <label for="@elements.id" class="col-sm-4 col-form-label">@elements.label</label>
+    <div class="col-sm-8">
+        @elements.input
+
+        @if(elements.hasErrors) {
+            @for(error <- elements.errors) {
+                <div class="alert-danger alert">
+                    @error @* FIXME: add Message(error) instead for localisation *@
+                </div>
+            }
+        }
+    </div>
+</div>
