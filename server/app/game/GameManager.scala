@@ -1,11 +1,10 @@
-package controllers
+package game
 
 import java.util.UUID
 import javax.inject.Inject
 
 import akka.actor.{Actor, ActorRef, ActorSystem, PoisonPill, Props}
 import akka.stream.Materializer
-import game.{Game, GameUser}
 import play.api.Logger.logger
 import play.api.libs.json._
 import play.api.libs.streams.ActorFlow

@@ -28,6 +28,10 @@ class Game(val gameUser1: GameUser, val gameUser2: GameUser) {
     user2.id -> user2
   )
 
+  //Use the system's dispatcher as ExecutionContext
+  private val system = akka.actor.ActorSystem("system")
+  import system.dispatcher
+
   def opponent(id: String): GameUserWithState = {
     if (id == user1.id) user2
     else user1
@@ -83,6 +87,8 @@ class Game(val gameUser1: GameUser, val gameUser2: GameUser) {
   private def handlePieceBottom(user: GameUserWithState): Unit = {
     val state = user.state
 
+    // TODO check game lost
+
     state.piecesPlaced += 1
 
     // amount of spaces piece has above itself
@@ -107,10 +113,6 @@ class Game(val gameUser1: GameUser, val gameUser2: GameUser) {
   }
 
   private def gameTick(user: GameUserWithState): Unit = {
-    //Use the system's dispatcher as ExecutionContext
-    val system = akka.actor.ActorSystem("system")
-    import system.dispatcher
-
     system.scheduler.scheduleOnce(user.state.gameSpeed.milliseconds) {
       if (!user.state.curPiece.moveDown()) handlePieceBottom(user)
       else broadcast(user, Json.obj(GameAPIKeys.gameGrid -> user.state.gameGrid))
