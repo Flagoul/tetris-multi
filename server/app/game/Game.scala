@@ -41,7 +41,7 @@ class Game(p1: Player, p2: Player) {
     players(id).state
   }
 
-  def movePiece(id: String, action: Action): Unit = {
+  def movePiece(id: String, action: Action): Unit = this.synchronized {
     val user = players(id)
     val gs = user.state
 
@@ -116,7 +116,7 @@ class Game(p1: Player, p2: Player) {
     ))
   }
 
-  private def gameTick(user: PlayerWithState): Unit = {
+  private def gameTick(user: PlayerWithState): Unit = this.synchronized {
     system.scheduler.scheduleOnce(user.state.gameSpeed.milliseconds) {
       if (!user.state.curPiece.moveDown()) {
         handlePieceBottom(user)
