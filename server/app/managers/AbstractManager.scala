@@ -68,6 +68,10 @@ abstract class AbstractManager[Model <: AbstractModel, Table <: AbstractTable[Mo
     db.run(query.filter(_.id === id).delete)
   }
 
+  def get(id: Long): Future[Option[Model]] = {
+    db.run(query.filter(_.id === id).result.headOption)
+  }
+
   /**
     * Update the object identified by the given id to the value of the given object.
     *

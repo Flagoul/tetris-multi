@@ -1,6 +1,6 @@
 @import controllers.authentication.AuthenticatedRequest
 
-@()(implicit request: AuthenticatedRequest[AnyContent])
+@(user: User)(implicit request: AuthenticatedRequest[AnyContent])
 
 
 @addStat(title: String, value: String) = {
@@ -13,7 +13,7 @@
     <div class="row align-items-center">
         <div class="col-md-12 mt-5">
             <div class="card">
-                <h4 class="card-header">USERNAME</h4>
+                <h4 class="card-header">@user.username</h4>
 
                 <div class="container">
                     <div class="row">

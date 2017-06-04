@@ -16,6 +16,7 @@ POST    /login                      controllers.Session.loginPost
 GET    /logout                      controllers.Session.logout
 
 GET     /stats                      controllers.Stats.index
+GET     /stats/:id                  controllers.Stats.userStats(id: Long)
 
 GET     /game                       controllers.GameController.index
 
