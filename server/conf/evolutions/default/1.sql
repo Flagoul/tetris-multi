@@ -1,18 +1,35 @@
 # --- !Ups
-CREATE TABLE `users` (
-  `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `username` VARCHAR(255) NOT NULL UNIQUE,
-  `password` VARCHAR(255) NOT NULL
+CREATE TABLE users (
+  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(255) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL
 );
 
 
-CREATE TABLE `sessions` (
-  `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `uuid` VARCHAR(255) NOT NULL UNIQUE,
+CREATE TABLE sessions (
+  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  uuid VARCHAR(255) NOT NULL UNIQUE,
   # We set the session to last 1 week
-  `expiration` TIMESTAMP NOT NULL,
-  `user_id` BIGINT NOT NULL,
+  expiration TIMESTAMP NOT NULL,
+  user_id BIGINT NOT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+
+CREATE TABLE results (
+  id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  player_1_id BIGINT NOT NULL,
+  player_1_score BIGINT NOT NULL,
+  player_1_pieces BIGINT NOT NULL,
+
+  player_2_id BIGINT NOT NULL,
+  player_2_score BIGINT NOT NULL,
+  player_2_pieces BIGINT NOT NULL,
+
+  time BIGINT NOT NULL,
+
+  FOREIGN KEY (player_1_id) REFERENCES users(id),
+  FOREIGN KEY (player_2_id) REFERENCES users(id)
 );
 
 
@@ -33,5 +50,6 @@ FOR EACH ROW
 # --- !Downs
 DROP TRIGGER IF EXISTS set_session_timestamp;
 DROP TRIGGER IF EXISTS update_session_timestamp;
-DROP TABLE IF EXISTS `sessions`;
-DROP TABLE IF EXISTS `users`;
+DROP TABLE IF EXISTS results;
+DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS users;
