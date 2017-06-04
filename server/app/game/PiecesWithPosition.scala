@@ -2,12 +2,9 @@ package game
 
 import shared.GameRules._
 import game.Pieces._
+import shared.Types.Position
 
 object PiecesWithPosition {
-
-  // A position in a grid on the form (row, col)
-  type Position = (Int, Int)
-
   class PieceWithPosition(val piece: Piece, grid: Array[Array[Boolean]], initPos: Position) {
     protected var positions: List[Position] = initPiecePositions()
 

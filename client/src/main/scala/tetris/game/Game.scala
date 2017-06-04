@@ -7,6 +7,7 @@ import org.scalajs.dom.raw.{HTMLButtonElement, MessageEvent, MouseEvent}
 import shared.Actions._
 import shared.GameAPIKeys
 import shared.GameRules._
+import shared.Types.Position
 
 
 class Game {
@@ -24,14 +25,22 @@ class Game {
   def readyExists(data: JValue): Boolean = data.isDefinedAt(GameAPIKeys.ready)
   def wonExists(data: JValue): Boolean = data.isDefinedAt(GameAPIKeys.won)
   def drawExists(data: JValue): Boolean = data.isDefinedAt(GameAPIKeys.draw)
+  def piecePositionsExists(data: JValue): Boolean = data.isDefinedAt(GameAPIKeys.piecePositions)
 
-  def wonValue(data: JValue): Boolean = data(GameAPIKeys.won).value.asInstanceOf[Boolean]
-  def opponentValue(data: JValue): Boolean = data(GameAPIKeys.opponent).value.asInstanceOf[Boolean]
+  def getWonValue(data: JValue): Boolean = data(GameAPIKeys.won).value.asInstanceOf[Boolean]
+  def getOpponentValue(data: JValue): Boolean = data(GameAPIKeys.opponent).value.asInstanceOf[Boolean]
+
+  def getPiecePositionsValue(data: JValue): List[Position] = {
+    data(GameAPIKeys.piecePositions).value.asInstanceOf[Seq[Seq[Int]]].map(l => (l.head, l.tail.head)).toList
+  }
+  def getGrid(data: JValue, key: String): Array[Array[Boolean]] = {
+    data(key).value.asInstanceOf[Seq[Seq[Boolean]]].map(_.toArray).toArray
+  }
 
   def handleId(data: JValue): Unit = id = data(GameAPIKeys.id).value.asInstanceOf[String]
 
   def handleReady(data: JValue): Unit = {
-    if (opponentValue(data)) {
+    if (getOpponentValue(data)) {
       opponentGB.setLayerText("Ready")
     }
     else {
@@ -45,7 +54,7 @@ class Game {
     opponentGB.showLayer()
 
     if (wonExists(data)) {
-      val winnerGB = if (wonValue(data)) playerGB else opponentGB
+      val winnerGB = if (getWonValue(data)) playerGB else opponentGB
       val loserGB = if (winnerGB == playerGB) opponentGB else playerGB
 
       winnerGB.setLayerText("Win")
@@ -61,11 +70,12 @@ class Game {
     playerGB.hideLayer()
     opponentGB.hideLayer()
 
-    val opponent = opponentValue(data)
+    val opponent = getOpponentValue(data)
     drawGridIfExists(data, GameAPIKeys.gameGrid, opponent)
     drawGridIfExists(data, GameAPIKeys.nextPieceGrid, opponent)
     changeInfoIfExists(data, GameAPIKeys.piecesPlaced, opponent)
     changeInfoIfExists(data, GameAPIKeys.points, opponent)
+    updatePiecePositionsIfExists(data, opponent)
   }
 
   def handleMessage(data: JValue): Unit = {
@@ -77,14 +87,20 @@ class Game {
 
   def drawGridIfExists(data: JValue, key: String, opponent: Boolean): Unit = {
     if (data.isDefinedAt(key)) {
-      // FIXME change to use seqs instead of arrays everywhere
-      val grid = data(key).value.asInstanceOf[Seq[Seq[Boolean]]].map(_.toArray).toArray
+      val grid = getGrid(data, key)
       val gb = if (opponent) opponentGB else playerGB
 
       key match {
-        case GameAPIKeys.gameGrid => gb.drawGame(grid)
-        case GameAPIKeys.nextPieceGrid => gb.drawNextPiece(grid)
+        case GameAPIKeys.gameGrid => gb.updateGameGrid(grid)
+        case GameAPIKeys.nextPieceGrid => gb.updateNextPieceGrid(grid)
       }
+    }
+  }
+
+  def updatePiecePositionsIfExists(data: JValue, opponent: Boolean): Unit = {
+    if (piecePositionsExists(data)) {
+      val gb = if (opponent) opponentGB else playerGB
+      gb.updatePiecePositions(getPiecePositionsValue(data))
     }
   }
 
@@ -118,10 +134,10 @@ class Game {
   }
 
   def init(): Unit = {
-    playerGB.drawGame(Array.ofDim[Boolean](nGameRows, nGameCols))
-    playerGB.drawNextPiece(Array.ofDim[Boolean](nNextPieceRows, nNextPieceCols))
-    opponentGB.drawGame(Array.ofDim[Boolean](nGameRows, nGameCols))
-    opponentGB.drawNextPiece(Array.ofDim[Boolean](nNextPieceRows, nNextPieceCols))
+    playerGB.drawGame()
+    playerGB.drawNextPieceGrid()
+    opponentGB.drawGame()
+    opponentGB.drawNextPieceGrid()
 
     startButton.onclick = (_: MouseEvent) => sendAction(Start)
 

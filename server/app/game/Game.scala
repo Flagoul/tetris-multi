@@ -3,6 +3,7 @@ package game
 import akka.actor.{ActorRef, PoisonPill}
 import game.Pieces._
 import game.PiecesWithPosition.{GamePiece, NextPiece}
+import play.api.libs.json.Json.JsValueWrapper
 import shared.GameRules.nGameCols
 import play.api.libs.json.{JsBoolean, JsObject, Json}
 import shared.Actions._
@@ -58,7 +59,7 @@ class Game(p1: Player, p2: Player) {
 
     if (moved) {
       if (action == Fall) handlePieceBottom(player)
-      else broadcast(player, Json.obj("gameGrid" -> gs.gameGrid))
+      else broadcastPiecePositions(player)
     }
   }
 
@@ -76,11 +77,13 @@ class Game(p1: Player, p2: Player) {
   def initGame(): Unit = {
     broadcast(player1, Json.obj(
       GameAPIKeys.gameGrid -> player1.state.gameGrid,
-      GameAPIKeys.nextPieceGrid -> player1.state.nextPieceGrid
+      GameAPIKeys.nextPieceGrid -> player1.state.nextPieceGrid,
+      piecePositionsToKeyVal(player1)
     ))
     broadcast(player2, Json.obj(
       GameAPIKeys.gameGrid -> player2.state.gameGrid,
-      GameAPIKeys.nextPieceGrid -> player2.state.nextPieceGrid
+      GameAPIKeys.nextPieceGrid -> player2.state.nextPieceGrid,
+      piecePositionsToKeyVal(player2)
     ))
 
     gameTick(player1)
@@ -109,22 +112,24 @@ class Game(p1: Player, p2: Player) {
 
     state.gameSpeed = GameRules.nextSpeed(state.gameSpeed)
 
+    broadcastPiecePositions(player)
+
     broadcast(player, Json.obj(
       GameAPIKeys.gameGrid -> player.state.gameGrid,
       GameAPIKeys.nextPieceGrid -> player.state.nextPieceGrid,
       GameAPIKeys.piecesPlaced -> state.piecesPlaced,
       GameAPIKeys.points -> state.points
     ))
+
+    val opp = opponent(player)
+    broadcast(opp, Json.obj(GameAPIKeys.gameGrid -> opp.state.gameGrid))
   }
 
   private def gameTick(player: PlayerWithState): Unit = this.synchronized {
     system.scheduler.scheduleOnce(player.state.gameSpeed.milliseconds) {
-      if (!player.state.curPiece.moveDown()) {
-        handlePieceBottom(player)
-      }
-      else {
-        broadcast(player, Json.obj(GameAPIKeys.gameGrid -> player.state.gameGrid))
-      }
+      if (!player.state.curPiece.moveDown()) handlePieceBottom(player)
+      else broadcastPiecePositions(player)
+
       gameTick(player)
     }
   }
@@ -133,6 +138,15 @@ class Game(p1: Player, p2: Player) {
     player.out ! Json.toJson(jsonObj + (GameAPIKeys.opponent -> JsBoolean(false))).toString()
     opponent(player).out ! Json.toJson(jsonObj + (GameAPIKeys.opponent -> JsBoolean(true))).toString()
   }
+
+  def broadcastPiecePositions(player: PlayerWithState): Unit = {
+    broadcast(player, Json.obj(piecePositionsToKeyVal(player)))
+  }
+
+  def piecePositionsToKeyVal(player: PlayerWithState): (String, JsValueWrapper) = {
+    GameAPIKeys.piecePositions -> player.state.curPiece.getPositions.map(p => Array(p._1, p._2))
+  }
+
 
   def lose(player: PlayerWithState): Unit = {
     player.out ! Json.obj(GameAPIKeys.won -> JsBoolean(false)).toString()
