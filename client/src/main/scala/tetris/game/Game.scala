@@ -20,13 +20,59 @@ class Game {
 
   private var id: String = ""
 
-  def sendAction(action: Action): Unit = {
-    val json: String = Map(
-      GameAPIKeys.id -> id,
-      GameAPIKeys.action -> action.name
-    ).js.toDenseString
+  def idExists(data: JValue): Boolean = data.isDefinedAt(GameAPIKeys.id)
+  def readyExists(data: JValue): Boolean = data.isDefinedAt(GameAPIKeys.ready)
+  def wonExists(data: JValue): Boolean = data.isDefinedAt(GameAPIKeys.won)
+  def drawExists(data: JValue): Boolean = data.isDefinedAt(GameAPIKeys.draw)
 
-    ws.send(json)
+  def wonValue(data: JValue): Boolean = data(GameAPIKeys.won).value.asInstanceOf[Boolean]
+  def opponentValue(data: JValue): Boolean = data(GameAPIKeys.opponent).value.asInstanceOf[Boolean]
+
+  def handleId(data: JValue): Unit = id = data(GameAPIKeys.id).value.asInstanceOf[String]
+
+  def handleReady(data: JValue): Unit = {
+    if (opponentValue(data)) {
+      opponentGB.setLayerText("Ready")
+    }
+    else {
+      playerGB.setLayerText("Ready")
+      startButton.style.display = "none"
+    }
+  }
+
+  def handleWonOrDraw(data: JValue): Unit = {
+    playerGB.showLayer()
+    opponentGB.showLayer()
+
+    if (wonExists(data)) {
+      val winnerGB = if (wonValue(data)) playerGB else opponentGB
+      val loserGB = if (winnerGB == playerGB) opponentGB else playerGB
+
+      winnerGB.setLayerText("Win")
+      loserGB.setLayerText("Lose")
+    }
+    else if (drawExists(data)) {
+      playerGB.setLayerText("Draw")
+      opponentGB.setLayerText("Draw")
+    }
+  }
+
+  def handleGame(data: JValue): Unit = {
+    playerGB.hideLayer()
+    opponentGB.hideLayer()
+
+    val opponent = opponentValue(data)
+    drawGridIfExists(data, GameAPIKeys.gameGrid, opponent)
+    drawGridIfExists(data, GameAPIKeys.nextPieceGrid, opponent)
+    changeInfoIfExists(data, GameAPIKeys.piecesPlaced, opponent)
+    changeInfoIfExists(data, GameAPIKeys.points, opponent)
+  }
+
+  def handleMessage(data: JValue): Unit = {
+    if (idExists(data)) handleId(data)
+    else if (readyExists(data)) handleReady(data)
+    else if (wonExists(data) || drawExists(data)) handleWonOrDraw(data)
+    else handleGame(data)
   }
 
   def drawGridIfExists(data: JValue, key: String, opponent: Boolean): Unit = {
@@ -42,7 +88,7 @@ class Game {
     }
   }
 
-  def changeIntValueIfExists(data: JValue, key: String, opponent: Boolean): Unit = {
+  def changeInfoIfExists(data: JValue, key: String, opponent: Boolean): Unit = {
     if (data.isDefinedAt(key)) {
       val gb = if (opponent) opponentGB else playerGB
       key match {
@@ -52,47 +98,22 @@ class Game {
     }
   }
 
-  def handleMessage(data: JValue): Unit = {
-    if (data.isDefinedAt(GameAPIKeys.id)) {
-      id = data(GameAPIKeys.id).value.asInstanceOf[String]
-    }
-    else if (data.isDefinedAt(GameAPIKeys.ready)) {
-      if (data(GameAPIKeys.opponent).value.asInstanceOf[Boolean]) {
-        opponentGB.setLayerText("Ready")
-      }
-      else {
-        playerGB.setLayerText("Ready")
-        startButton.style.display = "none"
-      }
-    }
-    else if (data.isDefinedAt(GameAPIKeys.won) || data.isDefinedAt(GameAPIKeys.draw)) {
-      playerGB.showLayer()
-      opponentGB.showLayer()
+  def sendAction(action: Action): Unit = {
+    val json: String = Map(
+      GameAPIKeys.id -> id,
+      GameAPIKeys.action -> action.name
+    ).js.toDenseString
 
-      if (data.isDefinedAt(GameAPIKeys.won)) {
-        if (data(GameAPIKeys.won).value.asInstanceOf[Boolean]) {
-          playerGB.setLayerText("Win")
-          opponentGB.setLayerText("Lose")
-        }
-        else {
-          playerGB.setLayerText("Lose")
-          opponentGB.setLayerText("Win")
-        }
-      }
-      else if (data.isDefinedAt(GameAPIKeys.draw)) {
-        playerGB.setLayerText("Draw")
-        opponentGB.setLayerText("Draw")
-      }
-    }
-    else {
-      playerGB.hideLayer()
-      opponentGB.hideLayer()
+    ws.send(json)
+  }
 
-      val opponent = data(GameAPIKeys.opponent).value.asInstanceOf[Boolean]
-      drawGridIfExists(data, GameAPIKeys.gameGrid, opponent)
-      drawGridIfExists(data, GameAPIKeys.nextPieceGrid, opponent)
-      changeIntValueIfExists(data, GameAPIKeys.piecesPlaced, opponent)
-      changeIntValueIfExists(data, GameAPIKeys.points, opponent)
+  def handleKeyDown(keyCode: Int): Unit = {
+    keyCode match {
+      case 37 | 65 => sendAction(Left)
+      case 38 | 87 => sendAction(Rotate)
+      case 39 | 68 => sendAction(Right)
+      case 40 | 83 => sendAction(Fall)
+      case _ =>
     }
   }
 
@@ -102,20 +123,10 @@ class Game {
     opponentGB.drawGame(Array.ofDim[Boolean](nGameRows, nGameCols))
     opponentGB.drawNextPiece(Array.ofDim[Boolean](nNextPieceRows, nNextPieceCols))
 
-    playerGB.setLayerText("")
-
     startButton.onclick = (_: MouseEvent) => sendAction(Start)
 
     ws.onmessage = (e: MessageEvent) => handleMessage(JValue.fromString(e.data.toString))
 
-    dom.window.onkeydown = (e: dom.KeyboardEvent) => {
-      e.keyCode match {
-        case 37 | 65 => sendAction(Left)
-        case 38 | 87 => sendAction(Rotate)
-        case 39 | 68 => sendAction(Right)
-        case 40 | 83 => sendAction(Fall)
-        case _ =>
-      }
-    }
+    dom.window.onkeydown = (e: dom.KeyboardEvent) => handleKeyDown(e.keyCode)
   }
 }
