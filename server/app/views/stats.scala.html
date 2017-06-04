@@ -10,12 +10,23 @@
     <div class="col-6 col-md-3 col-xl-2 text-right list-group-item">@value</div>
 }
 
+@resultRow(player: (Long, Long), opponent: (Long, Long), time: Long) = {
+    <tr class="@("table-success".when(player._1 > opponent._1)) @("table-danger".when(player._1 < opponent._1))">
+        <td class="text-right">@player._1</td>
+        <td class="text-right">@player._2</td>
+        <td>TODO</td>
+        <td class="text-right">@opponent._1</td>
+        <td class="text-right">@opponent._2</td>
+        <td class="text-right">@(time / 60)[min]</td>
+    </tr>
+}
+
 
 @main("Stats") {
     <div class="row align-items-center">
         <div class="col-md-12 mt-5">
             <div class="card">
-                <h4 class="card-header">@user.username</h4>
+                <h4 class="card-header bg-inverse card-inverse">@user.username</h4>
 
                 <div class="container">
                     <div class="row">
@@ -30,10 +41,39 @@
 
                         @addStat("Pieces played", piecesPlayed.toString)
                         @addStat("Maximum points", maximumPoints.toString)
-                        @addStat("Time played", (timePlayed / 60).toString + " min")
+                        @addStat("Time played", (timePlayed / 60).toString + "[min]")
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <table class="table table-stripped table-bordered">
+                <thead class="thead-inverse">
+                    <tr>
+                        <th>Score</th>
+                        <th>Pieces</th>
+                        <th>Opponent</th>
+                        <th>Opponent Score</th>
+                        <th>Opponent Pieces</th>
+                        <th>Duration</th>
+                    </tr>
+
+                    @for(result <- games) {
+                        @defining((result.player1Score, result.player1Pieces)) { p1Stats =>
+                            @defining((result.player2Score, result.player2Pieces)) { p2Stats =>
+                                @if(result.player1Id == user.id.get) {
+                                    @resultRow(p1Stats, p2Stats, result.time)
+                                } else {
+                                    @resultRow(p2Stats, p1Stats, result.time)
+                                }
+                            }
+                        }
+                    }
+                </thead>
+            </table>
         </div>
     </div>
 }
