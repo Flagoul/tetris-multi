@@ -2,7 +2,7 @@ package tetris.game
 
 import org.scalajs.dom
 import org.scalajs.dom.html.Canvas
-import org.scalajs.dom.raw.{Element, HTMLDivElement}
+import org.scalajs.dom.raw.{Element, HTMLDivElement, HTMLParagraphElement}
 
 /**
   * Represents a game box and its content.
@@ -23,8 +23,16 @@ class GameBox(id: String, nGameRows: Int, nGameCols: Int, nNextPieceRows: Int, n
     nNextPieceRows, nNextPieceCols, box.querySelector(".next-piece canvas").asInstanceOf[Canvas]
   )
 
+  private val readyLayer: HTMLDivElement = box.querySelector(".ready-layer").asInstanceOf[HTMLDivElement]
+  private val readyText: HTMLParagraphElement = box.querySelector(".ready-text").asInstanceOf[HTMLParagraphElement]
+
   private val piecesPlacedDiv: HTMLDivElement = box.querySelector(".pieces-placed").asInstanceOf[HTMLDivElement]
   private val pointsDiv: HTMLDivElement = box.querySelector(".points").asInstanceOf[HTMLDivElement]
+
+
+  def setReadyText(text: String): Unit = readyText.innerHTML = text
+
+  def hideReadyLayer(): Unit = readyLayer.style.display = "none"
 
   def setPiecesPlaced(piecesPlaced: Int): Unit = piecesPlacedDiv.innerHTML = piecesPlaced.toString
 

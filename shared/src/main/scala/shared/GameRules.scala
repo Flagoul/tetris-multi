@@ -19,6 +19,6 @@ object GameRules {
   }
 
   def nextSpeed(gameSpeed: Long): Long = {
-    gameSpeed - (gameSpeed * 0.05).toLong
+    gameSpeed - (gameSpeed * 0.03).toLong
   }
 }

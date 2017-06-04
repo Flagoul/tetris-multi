@@ -2,6 +2,7 @@ package shared
 
 object GameAPIKeys {
   val id: String = "id"
+  val ready: String = "ready"
   val action: String = "action"
   val gameGrid: String = "gameGrid"
   val nextPieceGrid: String = "nextPieceGrid"

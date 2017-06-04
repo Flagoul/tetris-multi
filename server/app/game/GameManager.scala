@@ -14,7 +14,7 @@ import shared.{Actions, GameAPIKeys}
 import scala.collection.mutable
 
 class GameManager @Inject()(implicit system: ActorSystem, materializer: Materializer) {
-  private var waitingUsers: mutable.Queue[Player] = mutable.Queue()
+  private var waitingPlayers: mutable.Queue[Player] = mutable.Queue()
   private var games: Map[String, Game] = Map()
 
   def socket: WebSocket = WebSocket.accept[String, String] { _ =>
@@ -48,21 +48,21 @@ class GameManager @Inject()(implicit system: ActorSystem, materializer: Material
         self ! PoisonPill
     }
 
-    def joinGame(user: Player): Unit = {
-      if (waitingUsers.isEmpty) {
-        waitingUsers += user
+    def joinGame(player: Player): Unit = {
+      if (waitingPlayers.isEmpty) {
+        waitingPlayers += player
         println("waiting")
       } else {
-        val opponent = waitingUsers.dequeue
-        val game = new Game(user, opponent)
+        val opponent = waitingPlayers.dequeue
+        val game = new Game(player, opponent)
 
-        games += (user.id -> game)
+        games += (player.id -> game)
         games += (opponent.id -> game)
 
         println("playing")
       }
 
-      out ! Json.stringify(Json.obj(GameAPIKeys.id -> user.id))
+      out ! Json.stringify(Json.obj(GameAPIKeys.id -> player.id))
     }
 
     def handleAction(id: String, action: String): Unit = {

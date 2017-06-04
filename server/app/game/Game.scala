@@ -42,8 +42,8 @@ class Game(p1: Player, p2: Player) {
   }
 
   def movePiece(id: String, action: Action): Unit = this.synchronized {
-    val user = players(id)
-    val gs = user.state
+    val player = players(id)
+    val gs = player.state
 
     if (!gs.ready) {
       return
@@ -57,17 +57,18 @@ class Game(p1: Player, p2: Player) {
     }
 
     if (moved) {
-      if (action == Fall) handlePieceBottom(user)
-      else broadcast(user, Json.obj("gameGrid" -> gs.gameGrid))
+      if (action == Fall) handlePieceBottom(player)
+      else broadcast(player, Json.obj("gameGrid" -> gs.gameGrid))
     }
   }
 
   def setReady(id: String): Unit = {
-    val user = players(id)
-    user.state.ready = true
+    val player = players(id)
+    player.state.ready = true
     println(id + " is ready")
+    broadcast(player, Json.obj(GameAPIKeys.ready -> true))
 
-    if (opponent(user).state.ready) {
+    if (opponent(player).state.ready) {
       initGame()
     }
   }
@@ -116,21 +117,21 @@ class Game(p1: Player, p2: Player) {
     ))
   }
 
-  private def gameTick(user: PlayerWithState): Unit = this.synchronized {
-    system.scheduler.scheduleOnce(user.state.gameSpeed.milliseconds) {
-      if (!user.state.curPiece.moveDown()) {
-        handlePieceBottom(user)
+  private def gameTick(player: PlayerWithState): Unit = this.synchronized {
+    system.scheduler.scheduleOnce(player.state.gameSpeed.milliseconds) {
+      if (!player.state.curPiece.moveDown()) {
+        handlePieceBottom(player)
       }
       else {
-        broadcast(user, Json.obj(GameAPIKeys.gameGrid -> user.state.gameGrid))
+        broadcast(player, Json.obj(GameAPIKeys.gameGrid -> player.state.gameGrid))
       }
-      gameTick(user)
+      gameTick(player)
     }
   }
 
-  def broadcast(user: PlayerWithState, jsonObj: JsObject): Unit = {
-    user.out ! Json.toJson(jsonObj + (GameAPIKeys.opponent -> JsBoolean(false))).toString()
-    opponent(user).out ! Json.toJson(jsonObj + (GameAPIKeys.opponent -> JsBoolean(true))).toString()
+  def broadcast(player: PlayerWithState, jsonObj: JsObject): Unit = {
+    player.out ! Json.toJson(jsonObj + (GameAPIKeys.opponent -> JsBoolean(false))).toString()
+    opponent(player).out ! Json.toJson(jsonObj + (GameAPIKeys.opponent -> JsBoolean(true))).toString()
   }
 
   def lose(player: PlayerWithState): Unit = {
