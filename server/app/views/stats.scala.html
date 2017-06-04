@@ -1,0 +1,31 @@
+@import controllers.authentication.AuthenticatedRequest
+
+@()(implicit request: AuthenticatedRequest[AnyContent])
+
+
+@addStat(title: String, value: String) = {
+    <div class="col-6 col-md-3 col-xl-2 font-weight-bold list-group-item">@title</div>
+    <div class="col-6 col-md-3 col-xl-2 text-right list-group-item">@value</div>
+}
+
+
+@main("Stats") {
+    <div class="row align-items-center">
+        <div class="col-md-12 mt-5">
+            <div class="card">
+                <h4 class="card-header">USERNAME</h4>
+
+                <div class="container">
+                    <div class="row">
+                        @addStat("Games played", 12.toString)
+                        @addStat("Games won", 5.toString)
+                        @addStat("Win/Lose Ratio", (12/(5 * 1.0)).toString)
+                        @addStat("Pieces played", 156.toString)
+                        @addStat("Maximum points", 10.toString)
+                        @addStat("Time played", 120.toString + " min")
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
