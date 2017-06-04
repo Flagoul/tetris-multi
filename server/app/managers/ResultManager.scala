@@ -3,10 +3,13 @@ package managers
 import javax.inject._
 
 import managers.DBWrapper.api._
-import models.{Result, ResultTable}
+import models.{Result, ResultTable, User, UserTable}
 import play.api.Application
 
 import scala.concurrent.{ExecutionContext, Future}
+
+
+case class ResultsWithUser(result: Result, player1: User, player2: User)
 
 
 /**
@@ -23,6 +26,8 @@ class ResultManager @Inject()(val appProvider: Provider[Application])
     * Query builder to use in the manager.
     */
   protected val query: TableQuery[ResultTable] = TableQuery[ResultTable]
+
+  protected val userQuery: TableQuery[UserTable] = TableQuery[UserTable]
 
   /**
     * Copy the given result, giving it a new id.
@@ -42,14 +47,20 @@ class ResultManager @Inject()(val appProvider: Provider[Application])
   private def filterGamesFor(playerId: Long) = query.filter(r => r.player1Id === playerId || r.player2Id === playerId)
 
   /**
-    * Get all results for the given user.
+    * Get all game results.
     *
-    * @param playerId player id
+    * @param playerId player id. If this is specified, will filter all results for the given user to be included.
     * @return sequence of all results.
     */
-  def getGamesFor(playerId: Long): Future[Seq[Result]] = {
-    db.run(filterGamesFor(playerId).result)
+  def getGames(playerId: Option[Long] = None): Future[Seq[ResultsWithUser]] = {
+    val q = playerId match {
+      case None => query
+      case Some(id) => filterGamesFor(id)
+    }
+    db.run(q.join(userQuery).on(_.player1Id === _.id).join(userQuery).on(_._1.player2Id === _.id).result)
+      .map(e => e.map(r => ResultsWithUser(r._1._1, r._1._2, r._2)))
   }
+
 
   /**
     * Get the number of games won for the givne user.

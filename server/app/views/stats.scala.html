@@ -1,8 +1,7 @@
 @import controllers.authentication.AuthenticatedRequest
-@import models.Result
+@import managers.ResultsWithUser
 
-
-@(user: User, games: Seq[Result], won: Int, piecesPlayed: Long, maximumPoints: Long, timePlayed: Long)(implicit request: AuthenticatedRequest[AnyContent])
+@(user: User, games: Seq[ResultsWithUser], won: Int, piecesPlayed: Long, maximumPoints: Long, timePlayed: Long)(implicit request: AuthenticatedRequest[AnyContent])
 
 
 @addStat(title: String, value: String) = {
@@ -10,11 +9,11 @@
     <div class="col-6 col-md-3 col-xl-2 text-right list-group-item">@value</div>
 }
 
-@resultRow(player: (Long, Long), opponent: (Long, Long), time: Long) = {
+@resultRow(player: (Long, Long), opponent: (Long, Long), opponentInfo: User, time: Long) = {
     <tr class="@("table-success".when(player._1 > opponent._1)) @("table-danger".when(player._1 < opponent._1))">
         <td class="text-right">@player._1</td>
         <td class="text-right">@player._2</td>
-        <td>TODO</td>
+        <td><a href="@routes.Stats.userStats(opponentInfo.id.get)">@opponentInfo.username</td>
         <td class="text-right">@opponent._1</td>
         <td class="text-right">@opponent._2</td>
         <td class="text-right">@(time / 60)[min]</td>
@@ -61,13 +60,13 @@
                         <th>Duration</th>
                     </tr>
 
-                    @for(result <- games) {
-                        @defining((result.player1Score, result.player1Pieces)) { p1Stats =>
-                            @defining((result.player2Score, result.player2Pieces)) { p2Stats =>
-                                @if(result.player1Id == user.id.get) {
-                                    @resultRow(p1Stats, p2Stats, result.time)
+                    @for(game <- games) {
+                        @defining((game.result.player1Score, game.result.player1Pieces)) { p1Stats =>
+                            @defining((game.result.player2Score, game.result.player2Pieces)) { p2Stats =>
+                                @if(game.result.player1Id == user.id.get) {
+                                    @resultRow(p1Stats, p2Stats, game.player2, game.result.time)
                                 } else {
-                                    @resultRow(p2Stats, p1Stats, result.time)
+                                    @resultRow(p2Stats, p1Stats, game.player1, game.result.time)
                                 }
                             }
                         }

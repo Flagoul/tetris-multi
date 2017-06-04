@@ -45,7 +45,7 @@ class Stats @Inject() (val users: UserManager, val sessions: SessionManager, val
       case None => Future.successful(NotFound("Not Found"))
       case Some(user) =>
         val stats = for {
-          games <- results.getGamesFor(user.id.get)
+          games <- results.getGames(user.id)
           gamesWon <- results.getNumberOfGamesWonFor(user.id.get)
           piecesPlayed <- results.getNumberOfPiecesPlayedFor(user.id.get)
           maximumPoints <- results.getMaximumPointsFor(user.id.get)
