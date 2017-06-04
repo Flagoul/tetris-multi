@@ -30,7 +30,7 @@ class Game {
   }
 
   def drawGridIfExists(data: JValue, key: String, opponent: Boolean): Unit = {
-    if (data(key) != JUndefined) {
+    if (data.isDefinedAt(key)) {
       // FIXME change to use seqs instead of arrays everywhere
       val grid = data(key).value.asInstanceOf[Seq[Seq[Boolean]]].map(_.toArray).toArray
       val gb = if (opponent) opponentGB else playerGB
@@ -43,40 +43,50 @@ class Game {
   }
 
   def changeIntValueIfExists(data: JValue, key: String, opponent: Boolean): Unit = {
-    if (data(key) != JUndefined) {
-      val number = data(key).value.asInstanceOf[Int]
+    if (data.isDefinedAt(key)) {
       val gb = if (opponent) opponentGB else playerGB
-
       key match {
-        case GameAPIKeys.piecesPlaced => gb.setPiecesPlaced(number)
-        case GameAPIKeys.points => gb.setPoints(number)
+        case GameAPIKeys.piecesPlaced => gb.setPiecesPlaced(data(key).value.toString)
+        case GameAPIKeys.points => gb.setPoints(data(key).value.toString)
       }
     }
   }
 
   def handleMessage(data: JValue): Unit = {
-    if (data(GameAPIKeys.id) != JUndefined) {
+    if (data.isDefinedAt(GameAPIKeys.id)) {
       id = data(GameAPIKeys.id).value.asInstanceOf[String]
     }
-    else if (data(GameAPIKeys.ready) != JUndefined) {
+    else if (data.isDefinedAt(GameAPIKeys.ready)) {
       if (data(GameAPIKeys.opponent).value.asInstanceOf[Boolean]) {
-        opponentGB.setReadyText("Ready")
+        opponentGB.setLayerText("Ready")
       }
       else {
-        playerGB.setReadyText("Ready")
+        playerGB.setLayerText("Ready")
         startButton.style.display = "none"
       }
     }
-    else if (data(GameAPIKeys.won) != JUndefined) {
-      if (data(GameAPIKeys.won).value.asInstanceOf[Boolean]) println("You won the game!")
-      else println("You lost the game.")
-    }
-    else if (data(GameAPIKeys.draw) != JUndefined) {
-      println("Draw!")
+    else if (data.isDefinedAt(GameAPIKeys.won) || data.isDefinedAt(GameAPIKeys.draw)) {
+      playerGB.showLayer()
+      opponentGB.showLayer()
+
+      if (data.isDefinedAt(GameAPIKeys.won)) {
+        if (data(GameAPIKeys.won).value.asInstanceOf[Boolean]) {
+          playerGB.setLayerText("Win")
+          opponentGB.setLayerText("Lose")
+        }
+        else {
+          playerGB.setLayerText("Lose")
+          opponentGB.setLayerText("Win")
+        }
+      }
+      else if (data.isDefinedAt(GameAPIKeys.draw)) {
+        playerGB.setLayerText("Draw")
+        opponentGB.setLayerText("Draw")
+      }
     }
     else {
-      playerGB.hideReadyLayer()
-      opponentGB.hideReadyLayer()
+      playerGB.hideLayer()
+      opponentGB.hideLayer()
 
       val opponent = data(GameAPIKeys.opponent).value.asInstanceOf[Boolean]
       drawGridIfExists(data, GameAPIKeys.gameGrid, opponent)
@@ -92,7 +102,7 @@ class Game {
     opponentGB.drawGame(Array.ofDim[Boolean](nGameRows, nGameCols))
     opponentGB.drawNextPiece(Array.ofDim[Boolean](nNextPieceRows, nNextPieceCols))
 
-    playerGB.setReadyText("")
+    playerGB.setLayerText("")
 
     startButton.onclick = (_: MouseEvent) => sendAction(Start)
 

@@ -2,11 +2,11 @@
 
 <div id="@(player + "-game-box")" class="game-box container col square">
     <div class="row">
-        <div class="ready-layer">
+        <div class="layer">
             @if(player == "player") {
                 <button id="ready-button" class="btn">Ready</button>
             }
-            <p class="ready-text">Not ready</p>
+            <p>Not ready</p>
         </div>
         <canvas class="game col-8"></canvas>
         <div class="game-info col-4 container">

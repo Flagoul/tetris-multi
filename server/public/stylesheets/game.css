@@ -25,7 +25,7 @@
     padding-bottom: 155%;
 }
 
-.ready-layer {
+.layer {
     position: absolute;
     z-index: 1;
 
@@ -35,15 +35,18 @@
     background-color: rgba(255, 255, 255, 0.8)
 }
 
-.ready-layer > * {
+.layer > * {
     display: block;
     position: relative;
 
     margin: auto;
     top: 50%;
-
     transform: translateY(-50%);
+}
+
+.layer p {
     text-align: center;
+    font-size: 3vw;
 }
 
 .game {

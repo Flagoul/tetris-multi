@@ -23,20 +23,22 @@ class GameBox(id: String, nGameRows: Int, nGameCols: Int, nNextPieceRows: Int, n
     nNextPieceRows, nNextPieceCols, box.querySelector(".next-piece canvas").asInstanceOf[Canvas]
   )
 
-  private val readyLayer: HTMLDivElement = box.querySelector(".ready-layer").asInstanceOf[HTMLDivElement]
-  private val readyText: HTMLParagraphElement = box.querySelector(".ready-text").asInstanceOf[HTMLParagraphElement]
+  private val layer: HTMLDivElement = box.querySelector(".layer").asInstanceOf[HTMLDivElement]
+  private val layerText: HTMLParagraphElement = box.querySelector("p").asInstanceOf[HTMLParagraphElement]
 
   private val piecesPlacedDiv: HTMLDivElement = box.querySelector(".pieces-placed").asInstanceOf[HTMLDivElement]
   private val pointsDiv: HTMLDivElement = box.querySelector(".points").asInstanceOf[HTMLDivElement]
 
 
-  def setReadyText(text: String): Unit = readyText.innerHTML = text
+  def setLayerText(text: String): Unit = layerText.innerHTML = text
 
-  def hideReadyLayer(): Unit = readyLayer.style.display = "none"
+  def hideLayer(): Unit = layer.style.display = "none"
 
-  def setPiecesPlaced(piecesPlaced: Int): Unit = piecesPlacedDiv.innerHTML = piecesPlaced.toString
+  def showLayer(): Unit = layer.style.display = "block"
 
-  def setPoints(points: Int): Unit = pointsDiv.innerHTML = points.toString
+  def setPiecesPlaced(piecesPlaced: String): Unit = piecesPlacedDiv.innerHTML = piecesPlaced
+
+  def setPoints(points: String): Unit = pointsDiv.innerHTML = points
 
   def drawGame(gridContent: Array[Array[Boolean]]): Unit = {
     gameCanvas.resize()
