@@ -1,12 +1,12 @@
 package tetris
 
-import tetris.game._
 import org.scalajs.dom
 import shared.SharedMessages
+import tetris.game._
 
 import scala.scalajs.js
 
-object ScalaJSExample extends js.JSApp {
+object Main extends js.JSApp {
   def main(): Unit = {
     // FIXME find a way to load code according to url
     shoutOut()
@@ -24,10 +24,10 @@ object ScalaJSExample extends js.JSApp {
 
   def game(): Unit = {
     // FIXME find a way to load code according to url
-    if (dom.document.querySelector("#user-game-box") == null) {
+    if (dom.document.querySelector("#player-game-box") == null) {
       return
     }
 
-    new Game().run()
+    new Game().init()
   }
 }

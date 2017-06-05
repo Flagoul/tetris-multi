@@ -15,7 +15,9 @@ lazy val server = (project in file("server"))
       "com.typesafe.play" %% "play-slick" % "2.1.0",
       "com.typesafe.play" %% "play-slick-evolutions" % "2.1.0",
       "org.mindrot" % "jbcrypt" % "0.4",
-      specs2 % Test
+      specs2 % Test,
+      "org.scalactic" %% "scalactic" % "3.0.1",
+      "org.scalatest" %% "scalatest" % "3.0.1" % "test"
     )
   )
   .enablePlugins(PlayScala)
@@ -26,8 +28,10 @@ lazy val client = (project in file("client"))
   .settings(
     scalaVersion := scalaV,
     scalaJSUseMainModuleInitializer := true,
+    resolvers += "mmreleases" at "https://artifactory.mediamath.com/artifactory/libs-release-global",
     libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scalajs-dom" % "0.9.2"
+      "org.scala-js" %%% "scalajs-dom" % "0.9.2",
+      "com.mediamath" %%% "scala-json" % "1.0"
     )
   )
   .enablePlugins(ScalaJSPlugin, ScalaJSWeb)

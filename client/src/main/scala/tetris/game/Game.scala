@@ -1,206 +1,148 @@
 package tetris.game
 
+import json._
 import org.scalajs.dom
+import org.scalajs.dom.WebSocket
+import org.scalajs.dom.raw.{HTMLButtonElement, MessageEvent, MouseEvent}
+import shared.Actions._
+import shared.GameAPIKeys
+import shared.GameRules._
+import shared.Types.Position
 
-import scala.util.Random
-import scala.scalajs.js.timers.setInterval
 
 class Game {
-  val nGameRows: Int = 22
-  val nGameCols: Int = 10
-  val nNextPieceRows: Int = 5
-  val nNextPieceCols: Int = 5
-
-  // FIXME temporary: should change with time
-  val gameSpeed: Int = 500
-
-  private val userGB: GameBox = new GameBox("user-game-box", nGameRows, nGameCols, nNextPieceRows, nNextPieceCols)
+  private val playerGB: GameBox = new GameBox("player-game-box", nGameRows, nGameCols, nNextPieceRows, nNextPieceCols)
   private val opponentGB: GameBox = new GameBox("opponent-game-box", nGameRows, nGameCols, nNextPieceRows, nNextPieceCols)
 
-  // A position in a grid on the form (row, col)
-  type Position = (Int, Int)
+  private val host: String = dom.window.location.host
+  private val ws = new WebSocket(s"ws://$host/ws")
 
+  private val startButton: HTMLButtonElement = dom.document.querySelector("#ready-button").asInstanceOf[HTMLButtonElement]
 
-  class PieceWithPosition(piece: Piece, grid: Array[Array[Boolean]], initPos: Position) {
-    protected var positions: List[Position] = initPiecePositions()
+  private var id: String = ""
 
-    /**
-      * Creates positions for the piece, based on the position where to start drawing.
-      *
-      * @return The positions of where the blocks of the pieces should be drawn.
-      */
-    def initPiecePositions(): List[Position] = {
-      val pieceShape = piece.shape()
-      val pieceWidth = pieceShape.head.length
-      val pieceHeight = pieceShape.length
+  def idExists(data: JValue): Boolean = data.isDefinedAt(GameAPIKeys.id)
+  def readyExists(data: JValue): Boolean = data.isDefinedAt(GameAPIKeys.ready)
+  def wonExists(data: JValue): Boolean = data.isDefinedAt(GameAPIKeys.won)
+  def drawExists(data: JValue): Boolean = data.isDefinedAt(GameAPIKeys.draw)
+  def piecePositionsExists(data: JValue): Boolean = data.isDefinedAt(GameAPIKeys.piecePositions)
 
-      val positions = for {
-        row <- 0 until pieceHeight
-        col <- 0 until pieceWidth
-        if pieceShape(row)(col)
-      } yield (initPos._1 + row, initPos._2 + col)
+  def getWonValue(data: JValue): Boolean = data(GameAPIKeys.won).value.asInstanceOf[Boolean]
+  def getOpponentValue(data: JValue): Boolean = data(GameAPIKeys.opponent).value.asInstanceOf[Boolean]
 
-      positions.toList
-    }
-
-    def getPositions: List[Position] = positions
+  def getPiecePositionsValue(data: JValue): List[Position] = {
+    data(GameAPIKeys.piecePositions).value.asInstanceOf[Seq[Seq[Int]]].map(l => (l.head, l.tail.head)).toList
+  }
+  def getGrid(data: JValue, key: String): Array[Array[Boolean]] = {
+    data(key).value.asInstanceOf[Seq[Seq[Boolean]]].map(_.toArray).toArray
   }
 
-  class GamePiece(piece: Piece, gameGrid: Array[Array[Boolean]]) extends PieceWithPosition(
-    piece, gameGrid,
-    (1, nGameCols / 2 - piece.shape().head.length / 2)
-  ) {
+  def handleId(data: JValue): Unit = id = data(GameAPIKeys.id).value.asInstanceOf[String]
 
-    def updateGrid(newPositions: List[Position]): Unit = {
-      updateGridAtPositions(gameGrid, positions, value = false)
-      updateGridAtPositions(gameGrid, newPositions, value = true)
-      userGB.drawGame(gameGrid)
-
-      positions = newPositions
+  def handleReady(data: JValue): Unit = {
+    if (getOpponentValue(data)) {
+      opponentGB.setLayerText("Ready")
     }
-
-    def collides(newPositions: List[Position], inBounds: Position => Boolean): Boolean = {
-      newPositions.exists(p => !inBounds(p) || (gameGrid(p._1)(p._2) && !positions.contains(p)))
+    else {
+      playerGB.setLayerText("Ready")
+      startButton.style.display = "none"
     }
+  }
 
-    private def move(transform: Position => Position, inBounds: Position => Boolean): Boolean = {
-      val newPositions: List[Position] = positions.map(transform)
+  def handleWonOrDraw(data: JValue): Unit = {
+    playerGB.showLayer()
+    opponentGB.showLayer()
 
-      val couldMove = !collides(newPositions, inBounds)
-      if (couldMove) {
-        updateGrid(newPositions)
+    if (wonExists(data)) {
+      val winnerGB = if (getWonValue(data)) playerGB else opponentGB
+      val loserGB = if (winnerGB == playerGB) opponentGB else playerGB
+
+      winnerGB.setLayerText("Win")
+      loserGB.setLayerText("Lose")
+    }
+    else if (drawExists(data)) {
+      playerGB.setLayerText("Draw")
+      opponentGB.setLayerText("Draw")
+    }
+  }
+
+  def handleGame(data: JValue): Unit = {
+    playerGB.hideLayer()
+    opponentGB.hideLayer()
+
+    val opponent = getOpponentValue(data)
+    drawGridIfExists(data, GameAPIKeys.gameGrid, opponent)
+    drawGridIfExists(data, GameAPIKeys.nextPieceGrid, opponent)
+    changeInfoIfExists(data, GameAPIKeys.piecesPlaced, opponent)
+    changeInfoIfExists(data, GameAPIKeys.points, opponent)
+    updatePiecePositionsIfExists(data, opponent)
+  }
+
+  def handleMessage(data: JValue): Unit = {
+    if (idExists(data)) handleId(data)
+    else if (readyExists(data)) handleReady(data)
+    else if (wonExists(data) || drawExists(data)) handleWonOrDraw(data)
+    else handleGame(data)
+  }
+
+  def drawGridIfExists(data: JValue, key: String, opponent: Boolean): Unit = {
+    if (data.isDefinedAt(key)) {
+      val grid = getGrid(data, key)
+      val gb = if (opponent) opponentGB else playerGB
+
+      key match {
+        case GameAPIKeys.gameGrid => gb.updateGameGrid(grid)
+        case GameAPIKeys.nextPieceGrid => gb.updateNextPieceGrid(grid)
       }
-
-      couldMove
     }
+  }
 
-    def inBoundLeft(p: Position): Boolean = p._2 >= 0
-    def inBoundRight(p: Position): Boolean = p._2 < nGameCols
-    def inBoundBottom(p: Position): Boolean = p._1 < nGameRows
-    def inBounds(p: Position): Boolean = inBoundLeft(p) && inBoundRight(p) && inBoundBottom(p)
-
-    def transformLeft(p: Position): Position = (p._1, p._2 - 1)
-    def transformRight(p: Position): Position = (p._1, p._2 + 1)
-    def transformDown(p: Position): Position = (p._1 + 1, p._2)
-
-    def moveLeft(): Boolean = move(transformLeft, inBoundLeft)
-    def moveRight(): Boolean = move(transformRight, inBoundRight)
-    def moveDown(): Boolean = move(transformDown, inBoundBottom)
-
-    def fall(): Unit = {
-      var moved = false
-      do {
-        moved = moveDown()
-      } while (moved)
+  def updatePiecePositionsIfExists(data: JValue, opponent: Boolean): Unit = {
+    if (piecePositionsExists(data)) {
+      val gb = if (opponent) opponentGB else playerGB
+      gb.updatePiecePositions(getPiecePositionsValue(data))
     }
+  }
 
-    def rotate(): Boolean = piece match {
-      case Square => true
+  def changeInfoIfExists(data: JValue, key: String, opponent: Boolean): Unit = {
+    if (data.isDefinedAt(key)) {
+      val gb = if (opponent) opponentGB else playerGB
+      key match {
+        case GameAPIKeys.piecesPlaced => gb.setPiecesPlaced(data(key).value.toString)
+        case GameAPIKeys.points => gb.setPoints(data(key).value.toString)
+      }
+    }
+  }
+
+  def sendAction(action: Action): Unit = {
+    val json: String = Map(
+      GameAPIKeys.id -> id,
+      GameAPIKeys.action -> action.name
+    ).js.toDenseString
+
+    ws.send(json)
+  }
+
+  def handleKeyDown(keyCode: Int): Unit = {
+    keyCode match {
+      case 37 | 65 => sendAction(Left)
+      case 38 | 87 => sendAction(Rotate)
+      case 39 | 68 => sendAction(Right)
+      case 40 | 83 => sendAction(Fall)
       case _ =>
-
-        // The position of the center of the piece; it is the axis of rotation.
-        // It is always the block at (0, 1) in the shape of the piece; to know the actual position we have to
-        // compute how many "true" they are in the first line of the shape and use it as index in the actual positions.
-        val center = positions(piece.shape().head.slice(0, 2).count(x => x) - 1)
-
-        // origin of square surrounding piece
-        val orig = (center._1 - 1, center._2 - 1)
-
-        // translating positions relatively to origin and do transpose rotation for bar or 90° rotation for others
-        val newPositions = positions.map(p => {
-          val tRow = p._1 - orig._1
-          val tCol = p._2 - orig._2
-
-          piece match {
-            case Bar => (tCol + orig._1, tRow + orig._2)
-            case _ => (tCol + orig._1, 3 - tRow - 1 + orig._2)
-          }
-        })
-
-        val couldMove = !collides(newPositions, inBounds)
-        if (couldMove) {
-          updateGrid(newPositions)
-        }
-
-        couldMove
     }
   }
 
-  class NextPiece(piece: Piece, gameGrid: Array[Array[Boolean]]) extends PieceWithPosition(
-    piece, gameGrid,
-    (nNextPieceRows / 2 - piece.shape().length / 2 , nNextPieceCols / 2 - piece.shape().head.length / 2)
-  )
+  def init(): Unit = {
+    playerGB.drawGame()
+    playerGB.drawNextPieceGrid()
+    opponentGB.drawGame()
+    opponentGB.drawNextPieceGrid()
 
-  def randomPiece(): Piece = Random.shuffle(List(Bar, InvL, L, S, Square, T, Z)).head
+    startButton.onclick = (_: MouseEvent) => sendAction(Start)
 
-  def updateGridAtPositions(grid: Array[Array[Boolean]], positions: List[Position], value: Boolean): Unit = {
-    for (pos <- positions) {
-      grid(pos._1)(pos._2) = value
-    }
-  }
+    ws.onmessage = (e: MessageEvent) => handleMessage(JValue.fromString(e.data.toString))
 
-  def deleteCompletedLines(gameGrid: Array[Array[Boolean]]): Array[Array[Boolean]] = {
-    val res = gameGrid.filterNot(row => row.count(x => x) == nGameCols)
-
-    if (res.length < nGameRows) {
-      return Array.ofDim[Boolean](nGameRows - res.length, nGameCols) ++ res
-    }
-
-    res
-  }
-
-  def run(): Unit = {
-    var gameGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
-    val nextPieceGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
-
-    val opponentGameGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
-    val opponentNextPieceGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
-
-    var currentPiece = randomPiece()
-    var nextPiece: Piece = randomPiece()
-
-    var piece = new GamePiece(currentPiece, gameGrid)
-    var next = new NextPiece(nextPiece, nextPieceGrid)
-
-    updateGridAtPositions(gameGrid, piece.getPositions, value = true)
-    updateGridAtPositions(nextPieceGrid, next.getPositions, value = true)
-
-    userGB.drawGame(gameGrid)
-    userGB.drawNextPiece(nextPieceGrid)
-
-    opponentGB.drawGame(opponentGameGrid)
-    opponentGB.drawNextPiece(opponentNextPieceGrid)
-
-    dom.window.onkeypress = { (e: dom.KeyboardEvent) =>
-      e.charCode match {
-        case 97 => piece.moveLeft()
-        case 100 => piece.moveRight()
-        case 115 => piece.fall()
-        case 119 => piece.rotate()
-      }
-    }
-
-    setInterval(gameSpeed) {
-      val moved = piece.moveDown()
-
-      if (!moved) {
-        gameGrid = deleteCompletedLines(gameGrid)
-
-        updateGridAtPositions(nextPieceGrid, next.getPositions, value = false)
-
-        currentPiece = nextPiece
-        nextPiece = randomPiece()
-
-        piece = new GamePiece(currentPiece, gameGrid)
-        next = new NextPiece(nextPiece, nextPieceGrid)
-
-        updateGridAtPositions(gameGrid, piece.getPositions, value = true)
-        updateGridAtPositions(nextPieceGrid, next.getPositions, value = true)
-
-        userGB.drawNextPiece(nextPieceGrid)
-      }
-
-      userGB.drawGame(gameGrid)
-    }
+    dom.window.onkeydown = (e: dom.KeyboardEvent) => handleKeyDown(e.keyCode)
   }
 }

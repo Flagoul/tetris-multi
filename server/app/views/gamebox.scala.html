@@ -1,7 +1,15 @@
-@(boxId: String)
+@(player: String)
 
-<div id="@boxId" class="game-box container col square">
+<div id="@(player + "-game-box")" class="game-box container col square">
     <div class="row">
+        <div class="layer">
+            @if(player == "player") {
+                <button id="ready-button" class="btn">Ready</button>
+                <p></p>
+            } else {
+                <p>Not ready</p>
+            }
+        </div>
         <canvas class="game col-8"></canvas>
         <div class="game-info col-4 container">
             <div class="row">
@@ -17,12 +25,12 @@
                 </div>
             </div>
             <div class="row">
-                <span class="col-8">Test</span>
-                <span class="col-4">3</span>
+                <span class="col-6">Placed</span>
+                <span class="col-6 pieces-placed">0</span>
             </div>
             <div class="row">
-                <span class="col-8">Test</span>
-                <span class="col-4">4</span>
+                <span class="col-6">Points</span>
+                <span class="col-6 points">0</span>
             </div>
         </div>
     </div>

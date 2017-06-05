@@ -17,4 +17,6 @@ GET    /logout                      controllers.Session.logout
 
 GET     /stats                      controllers.Stats.index
 
-GET     /game                       controllers.Game.index
+GET     /game                       controllers.GameController.index
+
+GET     /ws                         game.GameWSController.socket

@@ -25,6 +25,30 @@
     padding-bottom: 155%;
 }
 
+.layer {
+    position: absolute;
+    z-index: 1;
+
+    width: 100%;
+    height: 100%;
+
+    background-color: rgba(255, 255, 255, 0.8)
+}
+
+.layer > * {
+    display: block;
+    position: relative;
+
+    margin: auto;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.layer p {
+    text-align: center;
+    font-size: 3vw;
+}
+
 .game {
     padding: 0;
 }
@@ -32,7 +56,7 @@
 .game-info {
     padding-top: 5px;
     border-left: 1px solid grey;
-    font-size: 1.5vw;
+    font-size: 1.2vw;
 }
 
 .next-piece-title {
