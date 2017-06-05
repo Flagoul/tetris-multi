@@ -1,29 +1,42 @@
 package game
 
-import java.util.UUID
 import javax.inject.Inject
 
 import akka.actor.{Actor, ActorRef, ActorSystem, PoisonPill, Props}
 import akka.stream.Materializer
+import managers.{SessionManager, UserManager}
+import models.User
 import play.api.Logger.logger
 import play.api.libs.json._
 import play.api.libs.streams.ActorFlow
-import play.api.mvc.WebSocket
+import play.api.mvc.{Controller, WebSocket}
 import shared.{Actions, GameAPIKeys}
 
-import scala.collection.mutable
+import scala.concurrent.{ExecutionContext, Future}
 
-class GameWSController @Inject()(implicit system: ActorSystem, materializer: Materializer) {
+
+class GameWSController @Inject()(sessions: SessionManager, users: UserManager)
+                                (implicit system: ActorSystem, materializer: Materializer, ec: ExecutionContext)
+  extends Controller {
+
   private val gameManager: GameManager = GameManager()
 
-  def socket: WebSocket = WebSocket.accept[String, String] { _ =>
-    ActorFlow.actorRef(out => Props(new GameWSActor(out)))
+  def socket: WebSocket = WebSocket.acceptOrResult[String, String] { implicit request =>
+    // TODO(Benjamin) : verifying CORS would be good
+    // see https://www.playframework.com/documentation/2.5.x/ScalaWebSockets#rejecting-a-websocket for reference
+    sessions.getSession.flatMap({
+      case None => Future.successful(Left(Forbidden))
+      case Some(session) => users.get(session.userId).map({
+        case None => Left(Forbidden)
+        case Some(u) => Right(ActorFlow.actorRef(out => Props(new GameWSActor(out, u))))
+      })
+    })
   }
 
-  class GameWSActor(out: ActorRef) extends Actor {
+  class GameWSActor(out: ActorRef, user: User) extends Actor {
     override def preStart(): Unit = {
       super.preStart()
-      gameManager.joinGame(Player(UUID.randomUUID.toString, out))
+      gameManager.joinGame(Player(user.username, out))
     }
 
     def receive: PartialFunction[Any, Unit] = {
