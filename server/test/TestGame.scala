@@ -3,7 +3,7 @@ import game.{Game, GameState, Player}
 import shared.GameRules.{nGameCols, nGameRows}
 
 class TestGame extends FunSuite with BeforeAndAfter with PrivateMethodTester {
-  val game = new Game(new Player("1", null), new Player("2", null))
+  val game = new Game(Player("1", null), Player("2", null), null)
   val state = new GameState()
   val emptyGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
   val emptyRow: Array[Boolean] = Array.ofDim[Boolean](nGameCols)

@@ -12,7 +12,7 @@ import shared.{GameAPIKeys, GameRules}
 import scala.concurrent.duration._
 
 
-class Game(p1: Player, p2: Player) {
+class Game(p1: Player, p2: Player, gameManager: GameManager) {
   private val player1: PlayerWithState = PlayerWithState(p1)
   private val player2: PlayerWithState = PlayerWithState(p2)
 
@@ -150,16 +150,23 @@ class Game(p1: Player, p2: Player) {
     GameAPIKeys.piecePositions -> player.state.curPiece.getPositions.map(p => Array(p._1, p._2))
   }
 
-  def lose(player: PlayerWithState): Unit = {
+  private def lose(player: PlayerWithState): Unit = {
+    gameFinished = true
+
     player.out ! Json.obj(GameAPIKeys.won -> JsBoolean(false)).toString()
     opponent(player).out ! Json.obj(GameAPIKeys.won -> JsBoolean(true)).toString()
 
     player1.out ! PoisonPill
     player2.out ! PoisonPill
 
-    gameFinished = true
+    gameManager.deleteGame(player1.id)
+    gameManager.deleteGame(player2.id)
 
     println(s"Game took ${(System.currentTimeMillis() - gameBeganAt) / 1000} seconds")
+  }
+
+  def lose(id: String): Unit = {
+    lose(players(id))
   }
 
   def removeCompletedLines(state: GameState): Array[(Array[Boolean], Int)] = {
@@ -167,54 +174,8 @@ class Game(p1: Player, p2: Player) {
       .zipWithIndex
       .partition(p => p._1.count(x => x) == nGameCols)
 
-    println("kept")
-    kept.foreach(x => {
-      x._1.foreach(y => {
-        print(if (y) "X" else ".")
-        print(" ")
-      })
-      println()
-    })
-
-    println("removed")
-    removed.foreach(x => {
-      x._1.foreach(y => {
-        print(if (y) "X" else ".")
-        print(" ")
-      })
-      println()
-    })
-
-    val newValues = Array.ofDim[Boolean](removed.length, nGameCols) ++ kept.map(_._1)
-
-    println("newValues")
-    newValues.foreach(x => {
-      x.foreach(y => {
-        print(if (y) "X" else ".")
-        print(" ")
-      })
-      println()
-    })
-
+    val newValues = Array.ofDim[Boolean](removed.length, nGameCols) ++ kept.map(_._1.map(identity))
     state.updateGameGrid(newValues)
-
-    println("newValues")
-    newValues.foreach(x => {
-      x.foreach(y => {
-        print(if (y) "X" else ".")
-        print(" ")
-      })
-      println()
-    })
-
-    println("Updated grid")
-    state.gameGrid.foreach(x => {
-      x.foreach(y => {
-        print(if (y) "X" else ".")
-        print(" ")
-      })
-      println()
-    })
 
     removed
   }

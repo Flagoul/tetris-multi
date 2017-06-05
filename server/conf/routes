@@ -19,4 +19,4 @@ GET     /stats                      controllers.Stats.index
 
 GET     /game                       controllers.GameController.index
 
-GET     /ws                         game.GameManager.socket
+GET     /ws                         game.GameWSController.socket
