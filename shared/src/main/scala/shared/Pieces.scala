@@ -1,4 +1,6 @@
-package game
+package shared
+
+import scala.util.Random
 
 object Pieces {
   abstract class Piece {
@@ -52,4 +54,6 @@ object Pieces {
       Array(false, true, true)
     )
   }
+
+  def randomPiece(): Piece = Random.shuffle(List(BarPiece, InvLPiece, LPiece, SPiece, SquarePiece, TPiece, ZPiece)).head
 }

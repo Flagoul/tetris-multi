@@ -15,7 +15,9 @@ lazy val server = (project in file("server"))
       "com.typesafe.play" %% "play-slick" % "2.1.0",
       "com.typesafe.play" %% "play-slick-evolutions" % "2.1.0",
       "org.mindrot" % "jbcrypt" % "0.4",
-      specs2 % Test
+      specs2 % Test,
+      "org.scalactic" %% "scalactic" % "3.0.1",
+      "org.scalatest" %% "scalatest" % "3.0.1" % "test"
     )
   )
   .enablePlugins(PlayScala)

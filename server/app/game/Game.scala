@@ -1,7 +1,7 @@
 package game
 
-import akka.actor.{ActorRef, PoisonPill}
-import game.Pieces._
+import akka.actor.PoisonPill
+import shared.Pieces._
 import game.PiecesWithPosition.{GamePiece, NextPiece}
 import play.api.libs.json.Json.JsValueWrapper
 import shared.GameRules.nGameCols
@@ -9,18 +9,10 @@ import play.api.libs.json.{JsBoolean, JsObject, Json}
 import shared.Actions._
 import shared.{GameAPIKeys, GameRules}
 
-import scala.util.Random
 import scala.concurrent.duration._
 
 
 class Game(p1: Player, p2: Player) {
-
-  case class PlayerWithState(player: Player) {
-    val id: String = player.id
-    val out: ActorRef = player.ref
-    val state: GameState = new GameState(randomPiece(), randomPiece())
-  }
-
   private val player1: PlayerWithState = PlayerWithState(p1)
   private val player2: PlayerWithState = PlayerWithState(p2)
 
@@ -91,6 +83,7 @@ class Game(p1: Player, p2: Player) {
   }
 
   private def handlePieceBottom(player: PlayerWithState): Unit = {
+    val opp = opponent(player)
     val state = player.state
     val nBlocksAbove = state.curPiece.getPositions.minBy(_._1)._1
 
@@ -98,10 +91,21 @@ class Game(p1: Player, p2: Player) {
       lose(player)
     }
 
-    val nDeleted = removeCompletedLines(player)
+    val removed = removeCompletedLines(player.state)
+
+    val linesBeforeCompleted: Array[Array[Boolean]] = removed.map(p => {
+      val row: Array[Boolean] = p._1
+      val i = p._2
+      row.indices.map(col => !state.curPiece.getPositions.contains((i, col))).toArray
+    })
 
     state.piecesPlaced += 1
-    state.points += GameRules.pointsForPieceDown(nBlocksAbove, nDeleted, state.gameSpeed)
+    state.points += GameRules.pointsForPieceDown(nBlocksAbove, linesBeforeCompleted.length, state.gameSpeed)
+
+    val oppLost = sendLinesToOpponent(linesBeforeCompleted, opp)
+    if (oppLost) {
+      lose(opp)
+    }
 
     state.curPiece = new GamePiece(state.nextPiece.piece, state.gameGrid)
     state.curPiece.addToGrid()
@@ -121,7 +125,7 @@ class Game(p1: Player, p2: Player) {
       GameAPIKeys.points -> state.points
     ))
 
-    val opp = opponent(player)
+    broadcastPiecePositions(opp)
     broadcast(opp, Json.obj(GameAPIKeys.gameGrid -> opp.state.gameGrid))
   }
 
@@ -156,29 +160,96 @@ class Game(p1: Player, p2: Player) {
     player2.out ! PoisonPill
   }
 
-  def randomPiece(): Piece = Random.shuffle(List(BarPiece, InvLPiece, LPiece, SPiece, SquarePiece, TPiece, ZPiece)).head
-
-  def removeCompletedLines(player: PlayerWithState): Int = {
-    val state = player.state
+  def removeCompletedLines(state: GameState): Array[(Array[Boolean], Int)] = {
     val (removed, kept) = state.gameGrid
       .zipWithIndex
       .partition(p => p._1.count(x => x) == nGameCols)
 
-    val linesBeforeCompleted: Array[Array[Boolean]] = removed.map(p => {
-      val row: Array[Boolean] = p._1
-      val i = p._2
-      row.indices.map(col => !state.curPiece.getPositions.contains((i, col))).toArray
+    println("kept")
+    kept.foreach(x => {
+      x._1.foreach(y => {
+        print(if (y) "X" else ".")
+        print(" ")
+      })
+      println()
     })
 
-    player.state.gameGrid = Array.ofDim[Boolean](removed.length, nGameCols) ++ kept.map(_._1)
+    println("removed")
+    removed.foreach(x => {
+      x._1.foreach(y => {
+        print(if (y) "X" else ".")
+        print(" ")
+      })
+      println()
+    })
 
-    val toAdd = removed.length match {
-      case 1 | 2 | 3 => linesBeforeCompleted.take(removed.length - 1)
-      case _ => linesBeforeCompleted
+    val newValues = Array.ofDim[Boolean](removed.length, nGameCols) ++ kept.map(_._1)
+
+    println("newValues")
+    newValues.foreach(x => {
+      x.foreach(y => {
+        print(if (y) "X" else ".")
+        print(" ")
+      })
+      println()
+    })
+
+    state.updateGameGrid(newValues)
+
+    println("newValues")
+    newValues.foreach(x => {
+      x.foreach(y => {
+        print(if (y) "X" else ".")
+        print(" ")
+      })
+      println()
+    })
+
+    println("Updated grid")
+    state.gameGrid.foreach(x => {
+      x.foreach(y => {
+        print(if (y) "X" else ".")
+        print(" ")
+      })
+      println()
+    })
+
+    removed
+  }
+
+  def sendLinesToOpponent(lines: Array[Array[Boolean]], opp: PlayerWithState): Boolean = {
+    val toSend = lines.length match {
+      case 1 | 2 | 3 => lines.take(lines.length - 1)
+      case _ => lines
     }
 
-    opponent(player).state.gameGrid = opponent(player).state.gameGrid.drop(toAdd.length) ++ toAdd
+    if (toSend.nonEmpty) {
+      val oppPiece = opp.state.curPiece
 
-    removed.length
+      opp.state.gameGrid.foreach(x => {
+        x.foreach(y => {
+          print(if (y) "X" else "."); print(" ")
+        }); println()
+      })
+
+      oppPiece.removeFromGrid()
+      opp.state.updateGameGrid(opp.state.gameGrid.drop(toSend.length) ++ toSend)
+
+      while (oppPiece.wouldCollideIfAddedToGrid()) {
+        if (!oppPiece.moveUp(updateGridOnMove = false)) {
+          return true
+        }
+      }
+
+      oppPiece.addToGrid()
+
+      println("Opp grid at the end")
+      opp.state.gameGrid.foreach(x => {
+        x.foreach(y => {
+          print(if (y) "X" else "."); print(" ")
+        }); println()
+      })
+    }
+    false
   }
 }

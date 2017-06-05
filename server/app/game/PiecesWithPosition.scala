@@ -1,7 +1,7 @@
 package game
 
 import shared.GameRules._
-import game.Pieces._
+import shared.Pieces._
 import shared.Types.Position
 
 object PiecesWithPosition {
@@ -56,16 +56,17 @@ object PiecesWithPosition {
       addToGrid()
     }
 
-    def collides(newPositions: List[Position], inBounds: Position => Boolean): Boolean = {
+    def wouldCollide(newPositions: List[Position], inBounds: Position => Boolean): Boolean = {
       newPositions.exists(p => !inBounds(p) || (gameGrid(p._1)(p._2) && !positions.contains(p)))
     }
 
-    private def move(transform: Position => Position, inBounds: Position => Boolean): Boolean = {
+    private def move(transform: Position => Position, inBounds: Position => Boolean, updateGridOnMove: Boolean = true): Boolean = {
       val newPositions: List[Position] = positions.map(transform)
 
-      val couldMove = !collides(newPositions, inBounds)
+      val couldMove = !wouldCollide(newPositions, inBounds)
       if (couldMove) {
-        updateGrid(newPositions)
+        if (updateGridOnMove) updateGrid(newPositions)
+        else positions = newPositions
       }
 
       couldMove
@@ -74,15 +75,20 @@ object PiecesWithPosition {
     def inBoundLeft(p: Position): Boolean = p._2 >= 0
     def inBoundRight(p: Position): Boolean = p._2 < nGameCols
     def inBoundBottom(p: Position): Boolean = p._1 < nGameRows
+    def inBoundUp(p: Position): Boolean = p._1 >= 0
     def inBounds(p: Position): Boolean = inBoundLeft(p) && inBoundRight(p) && inBoundBottom(p)
 
     def transformLeft(p: Position): Position = (p._1, p._2 - 1)
     def transformRight(p: Position): Position = (p._1, p._2 + 1)
     def transformDown(p: Position): Position = (p._1 + 1, p._2)
+    def transformUp(p: Position): Position = (p._1 - 1, p._2)
 
-    def moveLeft(): Boolean = move(transformLeft, inBoundLeft)
-    def moveRight(): Boolean = move(transformRight, inBoundRight)
-    def moveDown(): Boolean = move(transformDown, inBoundBottom)
+    def moveLeft(updateGridOnMove: Boolean = true): Boolean = move(transformLeft, inBoundLeft, updateGridOnMove)
+    def moveRight(updateGridOnMove: Boolean = true): Boolean = move(transformRight, inBoundRight, updateGridOnMove)
+    def moveDown(updateGridOnMove: Boolean = true): Boolean = move(transformDown, inBoundBottom, updateGridOnMove)
+    def moveUp(updateGridOnMove: Boolean = true): Boolean = move(transformUp, inBoundUp, updateGridOnMove)
+
+    def wouldCollideIfAddedToGrid(): Boolean = positions.exists(p => gameGrid(p._1)(p._2))
 
     def fall(): Boolean = {
       var moved = false
@@ -115,7 +121,7 @@ object PiecesWithPosition {
           }
         })
 
-        val couldMove = !collides(newPositions, inBounds)
+        val couldMove = !wouldCollide(newPositions, inBounds)
         if (couldMove) {
           updateGrid(newPositions)
         }
