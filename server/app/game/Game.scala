@@ -3,6 +3,7 @@ package game
 import akka.actor.PoisonPill
 import shared.Pieces._
 import game.PiecesWithPosition.{GamePiece, NextPiece}
+import models.Result
 import play.api.libs.json.Json.JsValueWrapper
 import shared.GameRules.nGameCols
 import play.api.libs.json.{JsBoolean, JsObject, Json}
@@ -19,9 +20,9 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
   private var gameFinished: Boolean = false
   private var gameBeganAt: Long = _
 
-  private val players: Map[String, PlayerWithState] = Map(
-    player1.id -> player1,
-    player2.id -> player2
+  private val players: Map[Long, PlayerWithState] = Map(
+    player1.user.id.get -> player1,
+    player2.user.id.get -> player2
   )
 
   //Use the system's dispatcher as ExecutionContext
@@ -33,7 +34,7 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
     else player1
   }
 
-  def movePiece(id: String, action: Action): Unit = this.synchronized {
+  def movePiece(action: Action)(implicit id: Long): Unit = this.synchronized {
     val player = players(id)
     val gs = player.state
 
@@ -54,7 +55,7 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
     }
   }
 
-  def setReady(id: String): Unit = {
+  def setReady(implicit id: Long): Unit = {
     val player = players(id)
     player.state.ready = true
     println(id + " is ready")
@@ -159,13 +160,17 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
     player1.out ! PoisonPill
     player2.out ! PoisonPill
 
-    gameManager.deleteGame(player1.id)
-    gameManager.deleteGame(player2.id)
+    gameManager.endGame(Result(
+      None,
+      player1.user.id.get, player1.state.points, player1.state.piecesPlaced,
+      player2.user.id.get, player2.state.points, player2.state.piecesPlaced,
+      (System.currentTimeMillis() - gameBeganAt) / 1000
+    ))
 
     println(s"Game took ${(System.currentTimeMillis() - gameBeganAt) / 1000} seconds")
   }
 
-  def lose(id: String): Unit = {
+  def lose(implicit id: Long): Unit = {
     lose(players(id))
   }
 

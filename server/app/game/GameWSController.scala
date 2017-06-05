@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import akka.actor.{Actor, ActorRef, ActorSystem, PoisonPill, Props}
 import akka.stream.Materializer
-import managers.{SessionManager, UserManager}
+import managers.{ResultManager, SessionManager, UserManager}
 import models.User
 import play.api.Logger.logger
 import play.api.libs.json._
@@ -15,11 +15,11 @@ import shared.{Actions, GameAPIKeys}
 import scala.concurrent.{ExecutionContext, Future}
 
 
-class GameWSController @Inject()(sessions: SessionManager, users: UserManager)
+class GameWSController @Inject()(sessions: SessionManager, users: UserManager, results: ResultManager)
                                 (implicit system: ActorSystem, materializer: Materializer, ec: ExecutionContext)
   extends Controller {
 
-  private val gameManager: GameManager = GameManager()
+  private val gameManager: GameManager = GameManager(results)
 
   def socket: WebSocket = WebSocket.acceptOrResult[String, String] { implicit request =>
     // TODO(Benjamin) : verifying CORS would be good
@@ -28,15 +28,15 @@ class GameWSController @Inject()(sessions: SessionManager, users: UserManager)
       case None => Future.successful(Left(Forbidden))
       case Some(session) => users.get(session.userId).map({
         case None => Left(Forbidden)
-        case Some(u) => Right(ActorFlow.actorRef(out => Props(new GameWSActor(out, u))))
+        case Some(u) => Right(ActorFlow.actorRef(out => Props(new GameWSActor(out, u)(u.id.get))))
       })
     })
   }
 
-  class GameWSActor(out: ActorRef, user: User) extends Actor {
+  class GameWSActor(out: ActorRef, user: User)(implicit id: Long) extends Actor {
     override def preStart(): Unit = {
       super.preStart()
-      gameManager.joinGame(Player(user.username, out))
+      gameManager.joinGame(Player(user, out))
     }
 
     def receive: PartialFunction[Any, Unit] = {
@@ -44,10 +44,7 @@ class GameWSController @Inject()(sessions: SessionManager, users: UserManager)
         try {
           val data: JsValue = Json.parse(msg)
 
-          handleAction(
-            (data \ GameAPIKeys.id).as[String],
-            (data \ GameAPIKeys.action).as[String]
-          )
+          handleAction((data \ GameAPIKeys.action).as[String])
 
         } catch {
           case e: JsResultException =>
@@ -60,15 +57,15 @@ class GameWSController @Inject()(sessions: SessionManager, users: UserManager)
         self ! PoisonPill
     }
 
-    def handleAction(id: String, action: String): Unit = {
-      val game = gameManager.getGame(id)
+    def handleAction(action: String)(implicit id: Long): Unit = {
+      val game = gameManager.getGame
       action match {
-        case "start" => game.setReady(id)
-        case "quit" => game.lose(id)
-        case "left" => game.movePiece(id, Actions.Left)
-        case "right" => game.movePiece(id, Actions.Right)
-        case "rotate" => game.movePiece(id, Actions.Rotate)
-        case "fall" => game.movePiece(id, Actions.Fall)
+        case "start" => game.setReady
+        case "quit" => game.lose
+        case "left" => game.movePiece(Actions.Left)
+        case "right" => game.movePiece(Actions.Right)
+        case "rotate" => game.movePiece(Actions.Rotate)
+        case "fall" => game.movePiece(Actions.Fall)
         case _ =>
           logger.warn(s"Unknown action received: $action")
           self ! PoisonPill
