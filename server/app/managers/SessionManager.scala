@@ -6,7 +6,7 @@ import javax.inject._
 
 import models.{SessionTable, UserSession}
 import play.api.{Application, mvc}
-import play.api.mvc.Request
+import play.api.mvc.{Request, RequestHeader}
 import DBWrapper.api._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -58,7 +58,7 @@ class SessionManager @Inject()(val appProvider: Provider[Application])
     * @tparam T request type
     * @return the session if it exists or None
     */
-  def getSession[T](implicit request: Request[T]): Future[Option[UserSession]] = {
+  def getSession[T](implicit request: RequestHeader): Future[Option[UserSession]] = {
     request.session.
       get("uuid").map(uuid =>
         db.run(query.filter(_.uuid === uuid).result.headOption).flatMap({

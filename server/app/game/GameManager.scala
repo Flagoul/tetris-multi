@@ -1,13 +1,15 @@
 package game
 
+import managers.ResultManager
+import models.Result
 import play.api.libs.json.Json
 import shared.GameAPIKeys
 
 import scala.collection.mutable
 
-case class GameManager() {
+case class GameManager(results: ResultManager) {
   private var waitingPlayers: mutable.Queue[Player] = mutable.Queue()
-  private var games: Map[String, Game] = Map()
+  private var games: Map[Long, Game] = Map()
 
   def joinGame(player: Player): Unit = this.synchronized {
     if (waitingPlayers.isEmpty) {
@@ -17,19 +19,21 @@ case class GameManager() {
       val opponent = waitingPlayers.dequeue
       val game = new Game(player, opponent, this)
 
-      games += (player.id -> game)
-      games += (opponent.id -> game)
+      games += (player.user.id.get -> game)
+      games += (opponent.user.id.get -> game)
 
       println("playing")
     }
 
-    player.out ! Json.stringify(Json.obj(GameAPIKeys.id -> player.id))
+    player.out ! Json.stringify(Json.obj(GameAPIKeys.id -> player.user.username))
   }
 
-  def getGame(id: String): Game = games(id)
+  def getGame(implicit id: Long): Game = games(id)
 
-  def deleteGame(id: String): Unit = {
-    games -= id
-    println(s"There are now ${games.size} games")
+  def endGame(result: Result): Unit = {
+    games -= result.player1Id
+    games -= result.player2Id
+
+    results.create(result)
   }
 }

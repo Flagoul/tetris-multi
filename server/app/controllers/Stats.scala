@@ -31,7 +31,7 @@ class Stats @Inject() (val users: UserManager, val sessions: SessionManager, val
   def index() = Action { implicit request =>
     request.userSession match {
       case None => Redirect(routes.Application.index())
-      case Some(session) => Redirect(routes.Stats.userStats(session.user_id))
+      case Some(session) => Redirect(routes.Stats.userStats(session.userId))
     }
   }
 

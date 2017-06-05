@@ -12,9 +12,9 @@ import slick.lifted.ProvenShape
   * @param id unique identifier of the model
   * @param uuid to store on the http session to access the session
   * @param expiration date of expiration for this session
-  * @param user_id for which this session is valid
+  * @param userId for which this session is valid
   */
-case class UserSession(id: Option[Long], uuid: String, expiration: Option[Timestamp], user_id: Long)
+case class UserSession(id: Option[Long], uuid: String, expiration: Option[Timestamp], userId: Long)
   extends AbstractModel(id)
 
 

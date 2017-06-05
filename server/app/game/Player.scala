@@ -1,5 +1,6 @@
 package game
 
 import akka.actor.ActorRef
+import models.User
 
-case class Player(id: String, out: ActorRef)
+case class Player(user: User, out: ActorRef)
