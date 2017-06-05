@@ -16,6 +16,9 @@ class Game(p1: Player, p2: Player) {
   private val player1: PlayerWithState = PlayerWithState(p1)
   private val player2: PlayerWithState = PlayerWithState(p2)
 
+  private var gameFinished: Boolean = false
+  private var gameBeganAt: Long = _
+
   private val players: Map[String, PlayerWithState] = Map(
     player1.id -> player1,
     player2.id -> player2
@@ -74,11 +77,13 @@ class Game(p1: Player, p2: Player) {
       piecePositionsToKeyVal(player2)
     ))
 
+    gameBeganAt = System.currentTimeMillis()
+
     gameTick(player1)
     gameTick(player2)
   }
 
-  private def handlePieceBottom(player: PlayerWithState): Unit = {
+  private def handlePieceBottom(player: PlayerWithState): Unit = this.synchronized {
     val opp = opponent(player)
     val state = player.state
     val nBlocksAbove = state.curPiece.getPositions.minBy(_._1)._1
@@ -97,6 +102,11 @@ class Game(p1: Player, p2: Player) {
       lose(opp)
     }
 
+    generateNewPiece(player)
+  }
+
+  private def generateNewPiece(player: PlayerWithState) = {
+    val state = player.state
     state.curPiece = new GamePiece(state.nextPiece.piece, state.gameGrid)
     state.curPiece.addToGrid()
 
@@ -114,12 +124,11 @@ class Game(p1: Player, p2: Player) {
       GameAPIKeys.piecesPlaced -> state.piecesPlaced,
       GameAPIKeys.points -> state.points
     ))
-
-    broadcastPiecePositions(opp)
-    broadcast(opp, Json.obj(GameAPIKeys.gameGrid -> opp.state.gameGrid))
   }
 
-  private def gameTick(player: PlayerWithState): Unit = this.synchronized {
+  private def gameTick(player: PlayerWithState): Unit = {
+    if (gameFinished) return
+
     system.scheduler.scheduleOnce(player.state.gameSpeed.milliseconds) {
       if (!player.state.curPiece.moveDown()) handlePieceBottom(player)
       else broadcastPiecePositions(player)
@@ -141,13 +150,16 @@ class Game(p1: Player, p2: Player) {
     GameAPIKeys.piecePositions -> player.state.curPiece.getPositions.map(p => Array(p._1, p._2))
   }
 
-
   def lose(player: PlayerWithState): Unit = {
     player.out ! Json.obj(GameAPIKeys.won -> JsBoolean(false)).toString()
     opponent(player).out ! Json.obj(GameAPIKeys.won -> JsBoolean(true)).toString()
 
     player1.out ! PoisonPill
     player2.out ! PoisonPill
+
+    gameFinished = true
+
+    println(s"Game took ${(System.currentTimeMillis() - gameBeganAt) / 1000} seconds")
   }
 
   def removeCompletedLines(state: GameState): Array[(Array[Boolean], Int)] = {
@@ -233,6 +245,9 @@ class Game(p1: Player, p2: Player) {
 
       oppPiece.addToGrid()
     }
+
+    broadcastPiecePositions(opp)
+    broadcast(opp, Json.obj(GameAPIKeys.gameGrid -> opp.state.gameGrid))
     false
   }
 }
