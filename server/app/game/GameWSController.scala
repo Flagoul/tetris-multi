@@ -22,7 +22,7 @@ class GameWSController @Inject()(sessions: SessionManager, users: UserManager, r
   private val gameManager: GameManager = GameManager(results)
 
   def socket: WebSocket = WebSocket.acceptOrResult[String, String] { implicit request =>
-    // TODO(Benjamin) : verifying CORS would be good
+    // NOTE(Benjamin) : verifying CORS would be good
     // see https://www.playframework.com/documentation/2.5.x/ScalaWebSockets#rejecting-a-websocket for reference
     sessions.getSession.flatMap({
       case None => Future.successful(Left(Forbidden))

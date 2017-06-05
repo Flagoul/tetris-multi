@@ -9,6 +9,8 @@ import managers.{SessionManager, UserManager}
 import models.User
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc.{Action, AnyContent}
+import play.api.Logger.logger
+
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -55,7 +57,7 @@ class Registration @Inject()(users: UserManager, val sessions: SessionManager, v
               if (exception.getMessage.contains("Duplicate") && exception.getMessage.contains("username")) {
                 BadRequest(views.html.registration(form.withError("username", "This username is already taken")))
               } else {
-                // FIXME: we should log this
+                logger.error(exception.toString)
                 InternalServerError("Oops ! Something bad happened while saving you to the database. Please retry.")
               }
           })
