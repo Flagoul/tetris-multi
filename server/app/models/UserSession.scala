@@ -3,7 +3,7 @@ package models
 import java.sql.Timestamp
 
 import managers.DBWrapper.api._
-import slick.lifted.{ForeignKeyQuery, ProvenShape}
+import slick.lifted.ProvenShape
 
 
 /**
@@ -19,7 +19,7 @@ case class UserSession(id: Option[Long], uuid: String, expiration: Option[Timest
 
 
 /**
-  * Table in which to store sessions
+  * Table in which to store sessions.
   *
   * @param tag to give to the table
   */
@@ -49,14 +49,6 @@ class SessionTable(tag: Tag) extends AbstractTable[UserSession](tag, "sessions")
     * @return the column containing the user id
     */
   def user_id: Rep[Long] = column[Long]("user_id")
-
-  /**
-    * User that the session references
-    *
-    * @return the foreign key to the user.
-    */
-  def user: ForeignKeyQuery[UserTable, User] =
-    foreignKey("user_fk", user_id, users)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
 
   override def * : ProvenShape[UserSession] =
     (id.?, uuid, expiration.?, user_id) <> (UserSession.tupled, UserSession.unapply)

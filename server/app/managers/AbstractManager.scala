@@ -65,7 +65,17 @@ abstract class AbstractManager[Model <: AbstractModel, Table <: AbstractTable[Mo
     * @return number of objects deleted (0 or 1 in this case)
     */
   def delete(id: Long): Future[Int] = {
-    db.run(query.filter(_.id === id).delete)
+    db.run(query.findBy(_.id).applied(id).delete)
+  }
+
+  /**
+    * Get the object identifier by the given id.
+    *
+    * @param id of the object to get
+    * @return the object
+    */
+  def get(id: Long): Future[Option[Model]] = {
+    db.run(query.findBy(_.id).applied(id).result.headOption)
   }
 
   /**
@@ -76,7 +86,7 @@ abstract class AbstractManager[Model <: AbstractModel, Table <: AbstractTable[Mo
     * @return the updated object, without fetching it again from the database.
     */
   def update(id: Long, t: Model): Future[Option[Model]] = {
-    db.run(query.filter(_.id === id).update(t).map {
+    db.run(query.findBy(_.id).applied(id).update(t).map {
       case 0 => None
       case _ => Some(t)
     })

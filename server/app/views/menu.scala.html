@@ -10,8 +10,18 @@
 
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <div class="navbar-nav mr-auto">
-            <a class="nav-link @("active".when(request.path == routes.Game.index.toString))" href="@routes.Game.index">Play</a>
-            <a class="nav-link" href="">High Scores</a>
+            <a class="nav-link @("active".when(request.path == routes.GameController.index.toString))" href="@routes.GameController.index">
+                Play
+            </a>
+            <a class="nav-link @("active".when(request.path == routes.Scores.index.toString))" href="@routes.Scores.index">
+                High Scores
+            </a>
+
+            @if(request.userSession.isDefined) {
+                <a class="nav-link @("active".when(request.path.matches(routes.Stats.index.toString + "/.*")))" href="@routes.Stats.index">
+                    My Stats
+                </a>
+            }
         </div>
         <div class="navbar-nav ml-auto">
             @if(request.userSession.isEmpty) {

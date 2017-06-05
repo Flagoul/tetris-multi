@@ -13,4 +13,4 @@ ADD . /srv/app
 
 WORKDIR /srv/app
 
-CMD ["sbt", "run"]
+CMD ["sbt", "clean", "stage"]

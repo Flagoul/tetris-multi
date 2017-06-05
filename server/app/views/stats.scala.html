@@ -1,0 +1,81 @@
+@import controllers.authentication.AuthenticatedRequest
+@import managers.ResultsWithUser
+@import views.html.styles.datatablesCSS
+
+@(user: User, games: Seq[ResultsWithUser], won: Int, piecesPlayed: Long, maximumPoints: Long, timePlayed: Long)(implicit request: AuthenticatedRequest[AnyContent])
+
+
+@addStat(title: String, value: String) = {
+    <div class="col-6 col-md-3 col-xl-2 font-weight-bold list-group-item">@title</div>
+    <div class="col-6 col-md-3 col-xl-2 text-right list-group-item">@value</div>
+}
+
+@resultRow(player: (Long, Long), opponent: (Long, Long), opponentInfo: User, time: Long) = {
+    <tr class="@("table-success".when(player._1 > opponent._1)) @("table-danger".when(player._1 < opponent._1))">
+        <td class="text-right">@player._1</td>
+        <td class="text-right">@player._2</td>
+        <td><a href="@routes.Stats.userStats(opponentInfo.id.get)">@opponentInfo.username</td>
+        <td class="text-right">@opponent._1</td>
+        <td class="text-right">@opponent._2</td>
+        <td class="text-right">@(time / 60)[min]</td>
+    </tr>
+}
+
+
+@main("Stats", datatablesCSS()) {
+    <div class="row align-items-center">
+        <div class="col-md-12 mt-5">
+            <div class="card">
+                <h4 class="card-header bg-inverse card-inverse">@user.username</h4>
+
+                <div class="container">
+                    <div class="row">
+                        @addStat("Games played", games.length.toString)
+                        @addStat("Games won", won.toString)
+
+                        @if(games.length - won == 0) {
+                            @addStat("Win/Lose Ratio", won.toString)
+                        } else {
+                            @addStat("Win/Lose Ratio", (won / ((games.length - won) * 1.0)).toString)
+                        }
+
+                        @addStat("Pieces played", piecesPlayed.toString)
+                        @addStat("Maximum points", maximumPoints.toString)
+                        @addStat("Time played", (timePlayed / 60).toString + "[min]")
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <table class="table table-stripped table-bordered" dataTable>
+                <thead class="thead-inverse">
+                    <tr>
+                        <th>Score</th>
+                        <th>Pieces</th>
+                        <th>Opponent</th>
+                        <th>Opponent Score</th>
+                        <th>Opponent Pieces</th>
+                        <th>Duration</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @for(game <- games) {
+                        @defining((game.result.player1Score, game.result.player1Pieces)) { p1Stats =>
+                            @defining((game.result.player2Score, game.result.player2Pieces)) { p2Stats =>
+                                @if(game.result.player1Id == user.id.get) {
+                                    @resultRow(p1Stats, p2Stats, game.player2, game.result.time)
+                                } else {
+                                    @resultRow(p2Stats, p1Stats, game.player1, game.result.time)
+                                }
+                            }
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

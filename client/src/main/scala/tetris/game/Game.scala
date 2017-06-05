@@ -1,6 +1,7 @@
 package tetris.game
 
 import json._
+
 import org.scalajs.dom
 import org.scalajs.dom.WebSocket
 import org.scalajs.dom.raw.{HTMLButtonElement, MessageEvent, MouseEvent}
@@ -9,7 +10,10 @@ import shared.GameAPIKeys
 import shared.GameRules._
 import shared.Types.Position
 
+import scala.scalajs.js.annotation.{JSExportTopLevel, JSExport}
 
+
+@JSExportTopLevel("tetris.Game")
 class Game {
   private val playerGB: GameBox = new GameBox("player-game-box", nGameRows, nGameCols, nNextPieceRows, nNextPieceCols)
   private val opponentGB: GameBox = new GameBox("opponent-game-box", nGameRows, nGameCols, nNextPieceRows, nNextPieceCols)
@@ -133,6 +137,7 @@ class Game {
     }
   }
 
+  @JSExport
   def init(): Unit = {
     playerGB.drawGame()
     playerGB.drawNextPieceGrid()

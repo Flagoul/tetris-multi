@@ -15,9 +15,9 @@ lazy val server = (project in file("server"))
       "com.typesafe.play" %% "play-slick" % "2.1.0",
       "com.typesafe.play" %% "play-slick-evolutions" % "2.1.0",
       "org.mindrot" % "jbcrypt" % "0.4",
-      specs2 % Test,
       "org.scalactic" %% "scalactic" % "3.0.1",
-      "org.scalatest" %% "scalatest" % "3.0.1" % "test"
+      "org.scalatest" %% "scalatest" % "3.0.1" % "test",
+      specs2 % Test
     )
   )
   .enablePlugins(PlayScala)
@@ -31,7 +31,14 @@ lazy val client = (project in file("client"))
     resolvers += "mmreleases" at "https://artifactory.mediamath.com/artifactory/libs-release-global",
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scalajs-dom" % "0.9.2",
-      "com.mediamath" %%% "scala-json" % "1.0"
+      "com.mediamath" %%% "scala-json" % "1.0",
+      "be.doeraene" %%% "scalajs-jquery" % "0.9.1",
+      "org.webjars.npm" % "jquery" % "3.2.1"
+    ),
+    jsDependencies ++= Seq(
+      "org.webjars.npm" % "jquery" % "3.2.1" / "dist/jquery.js",
+      "org.webjars.bower" % "datatables" % "1.10.15" / "jquery.dataTables.js" dependsOn "dist/jquery.js",
+      "org.webjars.bower" % "datatables" % "1.10.15" / "dataTables.bootstrap4.js" dependsOn "jquery.dataTables.js"
     )
   )
   .enablePlugins(ScalaJSPlugin, ScalaJSWeb)
@@ -39,7 +46,13 @@ lazy val client = (project in file("client"))
 
 
 lazy val shared = (crossProject.crossType(CrossType.Pure) in file("shared"))
-  .settings(scalaVersion := scalaV)
+  .settings(
+    scalaVersion := scalaV,
+    libraryDependencies ++= Seq(
+      "org.webjars" % "bootstrap" % "4.0.0-alpha.6" exclude("org.webjars", "jquery"),
+      "org.webjars.bower" % "datatables" % "1.10.15" exclude("org.webjars", "jquery")
+    )
+  )
   .jsConfigure(_ enablePlugins ScalaJSWeb)
 
 

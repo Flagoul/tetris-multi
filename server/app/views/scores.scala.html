@@ -1,0 +1,37 @@
+@import controllers.authentication.AuthenticatedRequest
+@import managers.UserScore
+@import views.html.styles.datatablesCSS
+
+@(scores: Seq[UserScore])(implicit request: AuthenticatedRequest[AnyContent])
+
+
+@main("Stats", datatablesCSS()) {
+    <div class="row mt-5">
+        <div class="col-12">
+            <h1 class="text-center">Highest Scores</h1>
+        </div>
+        <div class="col-12">
+            <table class="table table-stripped table-bordered" dataTable>
+                <thead class="thead-inverse">
+                    <tr>
+                        <th>Username</th>
+                        <th>Highest score</th>
+                        <th>Highest pieces</th>
+                        <th>Longest game</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                @for(score <- scores) {
+                    <tr>
+                        <td><a href="@routes.Stats.userStats(score.user.id.get)">@score.user.username</a></td>
+                        <td>@score.score</td>
+                        <td>@score.pieces</td>
+                        <td>@score.duration</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
