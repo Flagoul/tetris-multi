@@ -6,7 +6,11 @@
     <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/game.css")">
 }
 
-@main("", stylesheets = stylesheets) {
+@scripts = {
+    <script>tetris.Game().init()</script>
+}
+
+@main("", stylesheets = stylesheets, scripts = scripts) {
     <div class="container">
         <div class="row">
             <div class="col-1"></div>

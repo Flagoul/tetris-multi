@@ -29,6 +29,6 @@ class Scores @Inject() (val users: UserManager, val sessions: SessionManager, va
     * @return the scores pages.
     */
   def index(): Action[AnyContent] = Action.async { implicit request =>
-    results.getHighestScores().map(scores => Ok(views.html.scores(scores)))
+    results.getHighestScores.map(scores => Ok(views.html.scores(scores)))
   }
 }

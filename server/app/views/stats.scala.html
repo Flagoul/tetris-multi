@@ -1,6 +1,5 @@
 @import controllers.authentication.AuthenticatedRequest
 @import managers.ResultsWithUser
-@import views.html.jquery.datatablesJS
 @import views.html.styles.datatablesCSS
 
 @(user: User, games: Seq[ResultsWithUser], won: Int, piecesPlayed: Long, maximumPoints: Long, timePlayed: Long)(implicit request: AuthenticatedRequest[AnyContent])
@@ -23,17 +22,7 @@
 }
 
 
-@scripts = {
-    @datatablesJS()
-    <script>
-        // FIXME: move this to ScalaJS
-        $(document).ready(function() {
-            $("#userScores").DataTable();
-        });
-    </script>
-}
-
-@main("Stats", datatablesCSS(), scripts) {
+@main("Stats", datatablesCSS()) {
     <div class="row align-items-center">
         <div class="col-md-12 mt-5">
             <div class="card">

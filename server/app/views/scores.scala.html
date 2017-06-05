@@ -1,25 +1,17 @@
 @import controllers.authentication.AuthenticatedRequest
 @import managers.UserScore
-@import views.html.jquery.datatablesJS
 @import views.html.styles.datatablesCSS
 
 @(scores: Seq[UserScore])(implicit request: AuthenticatedRequest[AnyContent])
 
 
-@scripts = {
-    @datatablesJS()
-    <script>
-            // FIXME: move this to ScalaJS
-            $(document).ready(function() {
-                $("#scores").DataTable();
-            });
-    </script>
-}
-
-@main("Stats", datatablesCSS(), scripts) {
+@main("Stats", datatablesCSS()) {
     <div class="row mt-5">
         <div class="col-12">
-            <table class="table table-stripped table-bordered" id="scores">
+            <h1 class="text-center">Highest Scores</h1>
+        </div>
+        <div class="col-12">
+            <table class="table table-stripped table-bordered" dataTable>
                 <thead class="thead-inverse">
                     <tr>
                         <th>Username</th>
