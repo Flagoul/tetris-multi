@@ -9,7 +9,24 @@ import play.api.Application
 import scala.concurrent.{ExecutionContext, Future}
 
 
+/**
+  * This class encapsulates a result with both users concerned.
+  *
+  * @param result to encapsulate
+  * @param player1 first player in the result
+  * @param player2 second player in the result
+  */
 case class ResultsWithUser(result: Result, player1: User, player2: User)
+
+/**
+  * Score a user made
+  *
+  * @param user user to which the score applies
+  * @param score score made by the player
+  * @param pieces number of peices put by the player
+  * @param duration duration of the game
+  */
+case class UserScore(user: User, score: Long, pieces: Long, duration: Long)
 
 
 /**
@@ -109,4 +126,21 @@ class ResultManager @Inject()(val appProvider: Provider[Application])
     db.run(filterGamesFor(playerId).map(_.time).sum.result).map(_.getOrElse(0))
   }
 
+  /**
+    * Get the highest score for each player.
+    *
+    * @return list of scores for each players
+    */
+  def getHighestScores: Future[Seq[UserScore]] = {
+    db.run(
+      query.map(res => (res.player1Id, res.player1Score, res.player1Pieces, res.time))
+        .union(query.map(res => (res.player2Id, res.player2Score, res.player2Pieces, res.time)))
+        .groupBy(_._1)
+        .map({
+          case (playerId, data) => (playerId, data.map(_._2).max, data.map(_._3).max, data.map(_._4).max)
+        })
+        .join(userQuery).on(_._1 === _.id)
+        .result
+    ).map(data => data.map(e => UserScore(e._2, e._1._2.getOrElse(0), e._1._3.getOrElse(0), e._1._4.getOrElse(0))))
+  }
 }
