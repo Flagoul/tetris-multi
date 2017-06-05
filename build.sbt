@@ -18,6 +18,7 @@ lazy val server = (project in file("server"))
       "org.scalactic" %% "scalactic" % "3.0.1",
       "org.scalatest" %% "scalatest" % "3.0.1" % "test",
       "org.webjars" % "bootstrap" % "4.0.0-alpha.6" exclude("org.webjars", "jquery"),
+      "org.webjars.bower" % "datatables" % "1.10.15" exclude("org.webjars", "jquery"),
       specs2 % Test
     )
   )

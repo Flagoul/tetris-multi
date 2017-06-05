@@ -12,9 +12,8 @@
 
         <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/main.css")">
         <link rel="stylesheet" href="@routes.Assets.versioned("lib/bootstrap/css/bootstrap.css")">
-            @stylesheets
+        @stylesheets
 
-            @scripts
     </head>
     <body>
         @menu()
@@ -23,6 +22,7 @@
             @content
         </div>
 
+        @scripts
         @scalajs.html.scripts("client", routes.Assets.versioned(_).toString, name => getClass.getResource(s"/public/$name") != null)
     </body>
 </html>

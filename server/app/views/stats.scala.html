@@ -1,5 +1,7 @@
 @import controllers.authentication.AuthenticatedRequest
 @import managers.ResultsWithUser
+@import views.html.jquery.datatablesJS
+@import views.html.styles.datatablesCSS
 
 @(user: User, games: Seq[ResultsWithUser], won: Int, piecesPlayed: Long, maximumPoints: Long, timePlayed: Long)(implicit request: AuthenticatedRequest[AnyContent])
 
@@ -21,7 +23,17 @@
 }
 
 
-@main("Stats") {
+@scripts = {
+    @datatablesJS()
+    <script>
+        // FIXME: move this to ScalaJS
+        $(document).ready(function() {
+            $("#userScores").DataTable();
+        });
+    </script>
+}
+
+@main("Stats", datatablesCSS(), scripts) {
     <div class="row align-items-center">
         <div class="col-md-12 mt-5">
             <div class="card">
@@ -49,7 +61,7 @@
 
     <div class="row mt-5">
         <div class="col-12">
-            <table class="table table-stripped table-bordered">
+            <table class="table table-stripped table-bordered" id="userScores">
                 <thead class="thead-inverse">
                     <tr>
                         <th>Score</th>
@@ -59,7 +71,9 @@
                         <th>Opponent Pieces</th>
                         <th>Duration</th>
                     </tr>
+                </thead>
 
+                <tbody>
                     @for(game <- games) {
                         @defining((game.result.player1Score, game.result.player1Pieces)) { p1Stats =>
                             @defining((game.result.player2Score, game.result.player2Pieces)) { p2Stats =>
@@ -71,7 +85,7 @@
                             }
                         }
                     }
-                </thead>
+                </tbody>
             </table>
         </div>
     </div>
