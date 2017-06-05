@@ -1,11 +1,10 @@
 import org.scalatest.{BeforeAndAfter, FunSuite, PrivateMethodTester}
-import game.{Game, GameState, Player, PlayerWithState}
+import game.{Game, GameState, Player}
 import shared.GameRules.{nGameCols, nGameRows}
-import shared.Pieces.randomPiece
 
 class TestGame extends FunSuite with BeforeAndAfter with PrivateMethodTester {
   val game = new Game(new Player("1", null), new Player("2", null))
-  val state = new GameState(randomPiece(), randomPiece())
+  val state = new GameState()
   val emptyGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
   val emptyRow: Array[Boolean] = Array.ofDim[Boolean](nGameCols)
   var grid: Array[Array[Boolean]] = _

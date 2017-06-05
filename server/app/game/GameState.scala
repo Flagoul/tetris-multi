@@ -1,17 +1,17 @@
 package game
 
-import shared.Pieces.Piece
 import shared.GameRules._
 import game.PiecesWithPosition._
+import shared.Pieces.randomPiece
 
-class GameState(cur: Piece, next: Piece) {
+class GameState() {
   var gameSpeed: Long = 1000
 
   val gameGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
   val nextPieceGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
 
-  var curPiece: GamePiece = new GamePiece(cur, gameGrid)
-  var nextPiece: NextPiece = new NextPiece(next, nextPieceGrid)
+  var curPiece: GamePiece = new GamePiece(randomPiece(), gameGrid)
+  var nextPiece: NextPiece = new NextPiece(randomPiece(), nextPieceGrid)
 
   var piecesPlaced: Int = 0
   var points: Long = 0

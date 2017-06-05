@@ -1,10 +1,9 @@
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import game.GameState
 import shared.GameRules.{nGameCols, nGameRows}
-import shared.Pieces.SquarePiece
 
 class TestGameState extends FunSuite with BeforeAndAfter {
-  val state: GameState = new GameState(SquarePiece, SquarePiece)
+  val state: GameState = new GameState()
   var values: Array[Array[Boolean]] = _
 
   before {

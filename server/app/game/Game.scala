@@ -30,10 +30,6 @@ class Game(p1: Player, p2: Player) {
     else player1
   }
 
-  def gameState(id: String): GameState = {
-    players(id).state
-  }
-
   def movePiece(id: String, action: Action): Unit = this.synchronized {
     val player = players(id)
     val gs = player.state
@@ -93,16 +89,10 @@ class Game(p1: Player, p2: Player) {
 
     val removed = removeCompletedLines(player.state)
 
-    val linesBeforeCompleted: Array[Array[Boolean]] = removed.map(p => {
-      val row: Array[Boolean] = p._1
-      val i = p._2
-      row.indices.map(col => !state.curPiece.getPositions.contains((i, col))).toArray
-    })
-
     state.piecesPlaced += 1
-    state.points += GameRules.pointsForPieceDown(nBlocksAbove, linesBeforeCompleted.length, state.gameSpeed)
+    state.points += GameRules.pointsForPieceDown(nBlocksAbove, removed.length, state.gameSpeed)
 
-    val oppLost = sendLinesToOpponent(linesBeforeCompleted, opp)
+    val oppLost = sendLinesToOpponent(removed, state, opp)
     if (oppLost) {
       lose(opp)
     }
@@ -217,20 +207,20 @@ class Game(p1: Player, p2: Player) {
     removed
   }
 
-  def sendLinesToOpponent(lines: Array[Array[Boolean]], opp: PlayerWithState): Boolean = {
-    val toSend = lines.length match {
-      case 1 | 2 | 3 => lines.take(lines.length - 1)
-      case _ => lines
+  def sendLinesToOpponent(removed: Array[(Array[Boolean], Int)], state: GameState, opp: PlayerWithState): Boolean = {
+    val linesBeforeCompleted: Array[Array[Boolean]] = removed.map(p => {
+      val row: Array[Boolean] = p._1
+      val i = p._2
+      row.indices.map(col => !state.curPiece.getPositions.contains((i, col))).toArray
+    })
+
+    val toSend = linesBeforeCompleted.length match {
+      case 1 | 2 | 3 => linesBeforeCompleted.take(linesBeforeCompleted.length - 1)
+      case _ => linesBeforeCompleted
     }
 
     if (toSend.nonEmpty) {
       val oppPiece = opp.state.curPiece
-
-      opp.state.gameGrid.foreach(x => {
-        x.foreach(y => {
-          print(if (y) "X" else "."); print(" ")
-        }); println()
-      })
 
       oppPiece.removeFromGrid()
       opp.state.updateGameGrid(opp.state.gameGrid.drop(toSend.length) ++ toSend)
@@ -242,13 +232,6 @@ class Game(p1: Player, p2: Player) {
       }
 
       oppPiece.addToGrid()
-
-      println("Opp grid at the end")
-      opp.state.gameGrid.foreach(x => {
-        x.foreach(y => {
-          print(if (y) "X" else "."); print(" ")
-        }); println()
-      })
     }
     false
   }
