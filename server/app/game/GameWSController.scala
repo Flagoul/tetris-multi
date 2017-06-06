@@ -36,6 +36,13 @@ class GameWSController @Inject()(sessions: SessionManager, users: UserManager, r
   class GameWSActor(out: ActorRef, user: User)(implicit id: Long) extends Actor {
     override def preStart(): Unit = {
       super.preStart()
+
+      if (gameManager.playerAlreadyInGame) {
+        out ! Json.obj(GameAPIKeys.error -> "You are already in a game or waiting for one! Please close this tab.").toString()
+        out ! PoisonPill
+        return
+      }
+
       gameManager.joinGame(Player(user, out))
     }
 
