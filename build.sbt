@@ -33,12 +33,15 @@ lazy val client = (project in file("client"))
       "org.scala-js" %%% "scalajs-dom" % "0.9.2",
       "com.mediamath" %%% "scala-json" % "1.0",
       "be.doeraene" %%% "scalajs-jquery" % "0.9.1",
-      "org.webjars.npm" % "jquery" % "3.2.1"
+      "org.webjars.npm" % "jquery" % "3.2.1",
+      "org.webjars.npm" % "tether" % "1.4.0"
     ),
     jsDependencies ++= Seq(
-      "org.webjars.npm" % "jquery" % "3.2.1" / "dist/jquery.js",
-      "org.webjars.bower" % "datatables" % "1.10.15" / "jquery.dataTables.js" dependsOn "dist/jquery.js",
-      "org.webjars.bower" % "datatables" % "1.10.15" / "dataTables.bootstrap4.js" dependsOn "jquery.dataTables.js"
+      "org.webjars.npm" % "jquery" % "3.2.1" / "dist/jquery.js" minified "dist/jquery.min.js",
+      "org.webjars.npm" % "tether" % "1.4.0" / "dist/js/tether.js" minified "tether.min.js",
+      "org.webjars" % "bootstrap" % "4.0.0-alpha.6" / "bootstrap.js" minified "bootstrap.min.js" dependsOn "dist/jquery.js" dependsOn "dist/js/tether.js",
+      "org.webjars.bower" % "datatables" % "1.10.15" / "jquery.dataTables.js" minified "jquery.dataTables.min.js" dependsOn "dist/jquery.js",
+      "org.webjars.bower" % "datatables" % "1.10.15" / "dataTables.bootstrap4.js" minified "dataTables.bootstrap4.min.js" dependsOn "jquery.dataTables.js"
     )
   )
   .enablePlugins(ScalaJSPlugin, ScalaJSWeb)

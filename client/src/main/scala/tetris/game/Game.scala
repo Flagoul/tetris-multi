@@ -29,8 +29,13 @@ class Game {
   // The opponent's username
   private val opponentUsername: HTMLDivElement = dom.document.querySelector("#opponent-username").asInstanceOf[HTMLDivElement]
 
+  private val wsProtocol = dom.window.location.protocol match {
+    case "http:" => "ws"
+    case "https:" => "wss"
+  }
+
   // The websocket linked to the game connection url
-  private val ws = new WebSocket(s"ws://${dom.window.location.host}/ws")
+  private val ws = new WebSocket(s"$wsProtocol://${dom.window.location.host}/ws")
 
   // The start button on the player side
   private val startButton: HTMLButtonElement = dom.document.querySelector("#ready-button").asInstanceOf[HTMLButtonElement]
