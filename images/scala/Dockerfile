@@ -17,10 +17,12 @@ ADD ./images/scala/bootstrap /srv/bootstrap
 
 RUN cd /srv/bootstrap && sbt run && cd ../ && rm -rf bootstrap
 
+ADD images/scal/runserver.sh /
+
 ADD . /srv/app
 
 WORKDIR /srv/app
 
 RUN sbt clean stage
 
-CMD ["./server/target/universal/stage/bin/server"]
+CMD ["runserver.sh"]
