@@ -17,7 +17,7 @@ ADD ./images/scala/bootstrap /srv/bootstrap
 
 RUN cd /srv/bootstrap && sbt run && cd ../ && rm -rf bootstrap
 
-ADD images/scal/runserver.sh /
+ADD images/scala/runserver.sh /
 
 ADD . /srv/app
 
