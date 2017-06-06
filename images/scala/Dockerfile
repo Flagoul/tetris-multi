@@ -25,4 +25,4 @@ WORKDIR /srv/app
 
 RUN sbt clean stage
 
-CMD ["runserver.sh"]
+CMD ["sh", "/runserver.sh"]
