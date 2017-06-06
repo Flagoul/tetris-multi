@@ -21,7 +21,8 @@ libraryDependencies ++= Seq(
   "org.scala-js" %%% "scalajs-dom" % "0.9.2",
   "com.mediamath" %%% "scala-json" % "1.0",
   "be.doeraene" %%% "scalajs-jquery" % "0.9.1",
-  "org.webjars.npm" % "jquery" % "3.2.1"
+  "org.webjars.npm" % "jquery" % "3.2.1",
+  "org.webjars.npm" % "tether" % "1.4.0"
 )
 
 resolvers += "mmreleases" at "https://artifactory.mediamath.com/artifactory/libs-release-global"

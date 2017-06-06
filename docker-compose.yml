@@ -9,8 +9,10 @@ services:
     image: scala:latest
 
     environment:
-      TETRIS_DB_URL: "localhost/tetris?verifyServerCertificate=false&useSSL=true"
+      TETRIS_DB_URL: "db/tetris?verifyServerCertificate=false&useSSL=true"
       TETRIS_DB_USER: "tetris"
+      TETRIS_DB_PASSWORD: "${TETRIS_DB_PASSWORD}"
+      TETRIS_SECRET: "${TETRIS_SECRET}"
 
     ports:
       - "${TETRIS_PORT:-9000}:9000"
