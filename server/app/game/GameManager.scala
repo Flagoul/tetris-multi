@@ -2,7 +2,7 @@ package game
 
 import managers.ResultManager
 import models.Result
-import play.api.libs.json.{JsBoolean, Json}
+import play.api.libs.json.Json
 import shared.GameAPIKeys
 
 import scala.collection.mutable

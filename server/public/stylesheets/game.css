@@ -1,5 +1,10 @@
+#games {
+    margin-top: 10px;
+}
+
 .username {
     text-align: center;
+    font-size: 2vw;
 }
 
 .square {
@@ -78,4 +83,12 @@
     display: block;
     margin: 10%;
     padding: 0;
+}
+
+#error {
+    display: block;
+    text-align: center;
+
+    font-size: 2vw;
+    color: crimson;
 }

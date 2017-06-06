@@ -61,6 +61,7 @@ class GameWSController @Inject()(sessions: SessionManager, users: UserManager, r
       val game = gameManager.getGame
 
       if (game == null) {
+        out ! Json.obj(GameAPIKeys.error -> "There is no opponent yet!").toString()
         return
       }
 
