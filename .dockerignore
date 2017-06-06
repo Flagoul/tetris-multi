@@ -1,0 +1,19 @@
+# editor stuff
+.idea
+
+# git
+.git
+.gitignore
+
+# scala
+target
+project/project
+shared/.js
+shared/.jvm
+**/target
+
+# miscellaneous
+README.md
+.dockerignore
+docker-compose.yml
+.history

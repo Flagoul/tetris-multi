@@ -21,6 +21,6 @@ ADD . /srv/app
 
 WORKDIR /srv/app
 
-RUN sbt clean state
+RUN sbt clean stage
 
-CMD ["target/universal/stage/bin/server"]
+CMD ["./server/target/universal/stage/bin/server"]
