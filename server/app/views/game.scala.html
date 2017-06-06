@@ -1,6 +1,6 @@
 @import controllers.authentication.AuthenticatedRequest
 
-@()(implicit request: AuthenticatedRequest[AnyContent])
+@(username: String)(implicit request: AuthenticatedRequest[AnyContent])
 
 @stylesheets = {
     <link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/game.css")">
@@ -17,7 +17,7 @@
             <div id="games" class="col-10 container-fluid">
                 <div class="container-fluid">
                     <div class="row">
-                        <div id="player-username" class="col-6 username">Truc</div>
+                        <div id="player-username" class="col-6 username">@(username)</div>
                         <div id="opponent-username" class="col-6 username">?</div>
                     </div>
                 </div>
