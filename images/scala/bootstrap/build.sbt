@@ -10,7 +10,7 @@ libraryDependencies ++= Seq(
   "org.webjars.bower" % "datatables" % "1.10.15" exclude("org.webjars", "jquery"),
   // Server dependencies
   "com.vmunier" %% "scalajs-scripts" % "1.0.0",
-  "mysql" % "mysql-connector-java" % "5.1.39",
+  "mysql" % "mysql-connector-java" % "5.1.42",
   "com.typesafe.play" %% "play-slick" % "2.1.0",
   "com.typesafe.play" %% "play-slick-evolutions" % "2.1.0",
   "org.mindrot" % "jbcrypt" % "0.4",
