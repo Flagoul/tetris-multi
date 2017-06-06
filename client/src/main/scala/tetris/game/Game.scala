@@ -1,29 +1,31 @@
 package tetris.game
 
 import json._
-
 import org.scalajs.dom
 import org.scalajs.dom.WebSocket
-import org.scalajs.dom.raw.{HTMLButtonElement, MessageEvent, MouseEvent}
+import org.scalajs.dom.raw.{HTMLButtonElement, HTMLDivElement, MessageEvent, MouseEvent}
 import shared.Actions._
 import shared.GameAPIKeys
 import shared.GameRules._
 import shared.Types.Position
 
-import scala.scalajs.js.annotation.{JSExportTopLevel, JSExport}
+import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 
 
 /**
   * Handles the display of the game content and the websocket connection to the server.
   *
   * Note that for this to work, a button with id #ready-button must exist in order for this class to bind the
-  * click event.
+  * click event, as well as a div with the #opponent-username to set the player's opponent username when he joins.
   */
 @JSExportTopLevel("tetris.Game")
 class Game {
   // The game boxes of the player and his opponent
   private val playerGB: GameBox = new GameBox("player-game-box", nGameRows, nGameCols, nNextPieceRows, nNextPieceCols)
   private val opponentGB: GameBox = new GameBox("opponent-game-box", nGameRows, nGameCols, nNextPieceRows, nNextPieceCols)
+
+  // The opponent's username
+  private val opponentUsername: HTMLDivElement = dom.document.querySelector("#opponent-username").asInstanceOf[HTMLDivElement]
 
   // The host of the site.
   private val host: String = dom.window.location.host
@@ -61,7 +63,6 @@ class Game {
     */
   private def sendAction(action: Action): Unit = {
     val json: String = Map(
-      GameAPIKeys.id -> id,
       GameAPIKeys.action -> action.name
     ).js.toDenseString
 
@@ -89,19 +90,20 @@ class Game {
     * @param data The received data.
     */
   private def handleMessage(data: JValue): Unit = {
-    if (idExists(data)) setId(data)
+    if (opponentUsernameExists(data)) handleOpponentUsername(data)
     else if (readyExists(data)) handleReady(data)
     else if (wonExists(data) || drawExists(data)) handlesGameEnd(data)
     else handleGame(data)
   }
 
   /**
-    * Sets the received id.
+    * Handles the reception of the opponent's username in the received data.
     *
-    * @param data The data received.
+    * @param data The received data.
     */
-  private def setId(data: JValue): Unit = {
-    id = data(GameAPIKeys.id).value.asInstanceOf[String]
+  private def handleOpponentUsername(data: JValue): Unit = {
+    opponentUsername.innerHTML = getOpponentUsername(data)
+    opponentGB.setLayerText("Not ready")
   }
 
   /**
@@ -220,7 +222,7 @@ class Game {
   /**
     * Helpers to improve readability when checking existence of a value in the received data.
     */
-  private def idExists(data: JValue): Boolean = data.isDefinedAt(GameAPIKeys.id)
+  private def opponentUsernameExists(data: JValue): Boolean = data.isDefinedAt(GameAPIKeys.opponentUsername)
   private def readyExists(data: JValue): Boolean = data.isDefinedAt(GameAPIKeys.ready)
   private def wonExists(data: JValue): Boolean = data.isDefinedAt(GameAPIKeys.won)
   private def drawExists(data: JValue): Boolean = data.isDefinedAt(GameAPIKeys.draw)
@@ -229,6 +231,7 @@ class Game {
   /**
     * Helpers to improve readability when retrieving a value in the received data.
     */
+  private def getOpponentUsername(data: JValue): String = data(GameAPIKeys.opponentUsername).value.asInstanceOf[String]
   private def getWonValue(data: JValue): Boolean = data(GameAPIKeys.won).value.asInstanceOf[Boolean]
   private def getOpponentValue(data: JValue): Boolean = data(GameAPIKeys.opponent).value.asInstanceOf[Boolean]
   private def getPiecePositionsValue(data: JValue): List[Position] = {

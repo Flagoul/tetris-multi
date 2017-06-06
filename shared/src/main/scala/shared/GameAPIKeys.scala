@@ -1,7 +1,8 @@
 package shared
 
 object GameAPIKeys {
-  val id: String = "id"
+  val error = "error"
+  val opponentUsername = "opponentUsername"
   val ready: String = "ready"
   val action: String = "action"
   val gameGrid: String = "gameGrid"
@@ -12,5 +13,4 @@ object GameAPIKeys {
   val piecesPlaced: String = "piecesPlaces"
   val won: String = "won"
   val draw: String = "draw"
-
 }
