@@ -1,6 +1,6 @@
 package game
 
-import akka.actor.PoisonPill
+import akka.actor.ActorRef
 import managers.ResultManager
 import models.Result
 import play.api.libs.json.Json
@@ -9,25 +9,33 @@ import shared.GameAPIKeys
 import scala.collection.mutable
 
 case class GameManager(results: ResultManager) {
-  private var waitingPlayers: mutable.Queue[Player] = mutable.Queue()
-  private var waitingIds: Set[Long] = Set()
+  private var waitingPlayers: mutable.LinkedHashMap[Long, Player] = mutable.LinkedHashMap()
   private var games: Map[Long, Game] = Map()
 
-  def playerAlreadyInGame(implicit id: Long): Boolean = waitingIds.contains(id) || games.contains(id)
+  def isPlayerWaiting(implicit id: Long): Boolean = waitingPlayers.contains(id)
+
+  def removeWaitingPlayer(implicit id: Long): Unit = waitingPlayers -= id
+
+  def isPlayerInGame(implicit id: Long): Boolean = games.contains(id)
+
+  def putBackPlayerInGame(out: ActorRef)(implicit id: Long): Unit = {
+    val game = games(id)
+    game.putBackPlayerInGame(out)
+  }
 
   def joinGame(player: Player): Unit = this.synchronized {
     val playerId = player.user.id.get
 
     if (waitingPlayers.isEmpty) {
-      waitingPlayers += player
-      waitingIds += playerId
+      waitingPlayers += (playerId -> player)
       println("waiting")
     }
     else {
-      val opponent = waitingPlayers.dequeue
+      val firstInMap = waitingPlayers.keySet.iterator.next
+      val opponent = waitingPlayers(firstInMap)
       val opponentId = opponent.user.id.get
 
-      waitingIds -= opponentId
+      waitingPlayers -= opponentId
 
       val game = new Game(player, opponent, this)
 

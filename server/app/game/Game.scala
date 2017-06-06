@@ -1,6 +1,6 @@
 package game
 
-import akka.actor.PoisonPill
+import akka.actor.{ActorRef, PoisonPill}
 import shared.Pieces._
 import game.PiecesWithPosition.{GamePiece, NextPiece}
 import models.Result
@@ -69,21 +69,44 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
   }
 
   def initGame(): Unit = {
-    broadcast(player1, Json.obj(
-      GameAPIKeys.gameGrid -> player1.state.gameGrid,
-      GameAPIKeys.nextPieceGrid -> player1.state.nextPieceGrid,
-      piecePositionsToKeyVal(player1)
-    ))
-    broadcast(player2, Json.obj(
-      GameAPIKeys.gameGrid -> player2.state.gameGrid,
-      GameAPIKeys.nextPieceGrid -> player2.state.nextPieceGrid,
-      piecePositionsToKeyVal(player2)
-    ))
+    broadcastState(player1)
+    broadcastState(player2)
 
     gameBeganAt = System.currentTimeMillis()
 
     gameTick(player1)
     gameTick(player2)
+  }
+
+  def buildState(player: PlayerWithState): JsObject = {
+    Json.obj(
+      GameAPIKeys.gameGrid -> player.state.gameGrid,
+      GameAPIKeys.nextPieceGrid -> player.state.nextPieceGrid,
+      GameAPIKeys.piecesPlaced -> player.state.piecesPlaced,
+      GameAPIKeys.points -> player.state.points,
+      piecePositionsToKeyVal(player)
+    )
+  }
+
+  def broadcastState(player: PlayerWithState): Unit = {
+    broadcast(player, buildState(player))
+  }
+
+  def sendState(player: PlayerWithState, isOpponent: Boolean): Unit = {
+    player.out ! (buildState(player) + (GameAPIKeys.opponent -> JsBoolean(isOpponent))).toString()
+  }
+
+  def putBackPlayerInGame(out: ActorRef)(implicit id: Long): Unit = this.synchronized {
+    val player = players(id)
+    val opp = opponent(player)
+
+    println("out", out)
+
+    player.changeActorRef(out)
+
+    player.out ! Json.obj(GameAPIKeys.opponentUsername -> opp.user.username).toString()
+    sendState(player, isOpponent = false)
+    sendState(opp, isOpponent = true)
   }
 
   private def handlePieceBottom(player: PlayerWithState): Unit = this.synchronized {
@@ -141,8 +164,8 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
   }
 
   def broadcast(player: PlayerWithState, jsonObj: JsObject): Unit = {
-    player.out ! Json.toJson(jsonObj + (GameAPIKeys.opponent -> JsBoolean(false))).toString()
-    opponent(player).out ! Json.toJson(jsonObj + (GameAPIKeys.opponent -> JsBoolean(true))).toString()
+    player.out ! (jsonObj + (GameAPIKeys.opponent -> JsBoolean(false))).toString()
+    opponent(player).out ! (jsonObj + (GameAPIKeys.opponent -> JsBoolean(true))).toString()
   }
 
   def broadcastPiecePositions(player: PlayerWithState): Unit = {

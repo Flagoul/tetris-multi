@@ -37,10 +37,16 @@ class GameWSController @Inject()(sessions: SessionManager, users: UserManager, r
     override def preStart(): Unit = {
       super.preStart()
 
-      if (gameManager.playerAlreadyInGame) {
-        out ! Json.obj(GameAPIKeys.error -> "You are already in a game or waiting for one! Please close this tab.").toString()
-        out ! PoisonPill
+      if (gameManager.isPlayerInGame) {
+        println("putting back player in game")
+        println("out", out)
+        gameManager.putBackPlayerInGame(out)
         return
+      }
+
+      if (gameManager.isPlayerWaiting) {
+        println("Removing player and putting back in waiting list")
+        gameManager.removeWaitingPlayer
       }
 
       gameManager.joinGame(Player(user, out))
