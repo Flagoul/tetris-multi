@@ -59,6 +59,11 @@ class GameWSController @Inject()(sessions: SessionManager, users: UserManager, r
 
     def handleAction(action: String)(implicit id: Long): Unit = {
       val game = gameManager.getGame
+
+      if (game == null) {
+        return
+      }
+
       action match {
         case "start" => game.setReady
         case "quit" => game.lose

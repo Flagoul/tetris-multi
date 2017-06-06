@@ -28,7 +28,7 @@ case class GameManager(results: ResultManager) {
     player.out ! Json.stringify(Json.obj(GameAPIKeys.id -> player.user.username))
   }
 
-  def getGame(implicit id: Long): Game = games(id)
+  def getGame(implicit id: Long): Game = games.getOrElse(id, null)
 
   def endGame(result: Result): Unit = {
     games -= result.player1Id
