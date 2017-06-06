@@ -15,17 +15,26 @@ import scala.scalajs.js.annotation.{JSExportTopLevel, JSExport}
 
 /**
   * Handles the display of the game content and the websocket connection to the server.
+  *
+  * Note that for this to work, a button with id #ready-button must exist in order for this class to bind the
+  * click event.
   */
 @JSExportTopLevel("tetris.Game")
 class Game {
+  // The game boxes of the player and his opponent
   private val playerGB: GameBox = new GameBox("player-game-box", nGameRows, nGameCols, nNextPieceRows, nNextPieceCols)
   private val opponentGB: GameBox = new GameBox("opponent-game-box", nGameRows, nGameCols, nNextPieceRows, nNextPieceCols)
 
+  // The host of the site.
   private val host: String = dom.window.location.host
+
+  // The websocket linked to the game connection url
   private val ws = new WebSocket(s"ws://$host/ws")
 
+  // The start button on the player side
   private val startButton: HTMLButtonElement = dom.document.querySelector("#ready-button").asInstanceOf[HTMLButtonElement]
 
+  // The current id of the player
   private var id: String = ""
 
   /**
