@@ -36,7 +36,7 @@
                         @if(games.length - won == 0) {
                             @addStat("Win/Lose Ratio", won.toString)
                         } else {
-                            @addStat("Win/Lose Ratio", (won / ((games.length - won) * 1.0)).toString)
+                            @addStat("Win/Lose Ratio", "%.2f".format((won / ((games.length - won) * 1.0))))
                         }
 
                         @addStat("Pieces played", piecesPlayed.toString)
