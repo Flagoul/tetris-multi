@@ -34,13 +34,15 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
     else player1
   }
 
-  def movePiece(action: Action)(implicit id: Long): Unit = this.synchronized {
-    val player = players(id)
-    val gs = player.state
+  def everyoneReady(): Boolean = player1.state.ready && player2.state.ready
 
-    if (!gs.ready) {
+  def movePiece(action: Action)(implicit id: Long): Unit = this.synchronized {
+    if (!everyoneReady()) {
       return
     }
+
+    val player = players(id)
+    val gs = player.state
 
     val moved: Boolean = action match {
       case Left => gs.curPiece.moveLeft()
