@@ -23,4 +23,4 @@ WORKDIR /srv/app
 
 RUN sbt clean stage
 
-CMD ["rm", "-f", "/srv/app/server/target/universal/stage/RUNNING_PID", "&&", "./server/target/universal/stage/bin/server"]
+CMD ["./server/target/universal/stage/bin/server"]
