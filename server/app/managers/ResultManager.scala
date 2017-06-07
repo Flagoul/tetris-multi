@@ -13,10 +13,10 @@ import scala.concurrent.{ExecutionContext, Future}
   * This class encapsulates a result with both users concerned.
   *
   * @param result to encapsulate
-  * @param player1 first player in the result
-  * @param player2 second player in the result
+  * @param winner first player in the result
+  * @param loser second player in the result
   */
-case class ResultsWithUser(result: Result, player1: User, player2: User)
+case class ResultsWithUser(result: Result, winner: User, loser: User)
 
 /**
   * Score a user made
@@ -61,7 +61,7 @@ class ResultManager @Inject()(val appProvider: Provider[Application])
     * @param playerId for which to filter the results.
     * @return results, filtered for the given user.
     */
-  private def filterGamesFor(playerId: Long) = query.filter(r => r.player1Id === playerId || r.player2Id === playerId)
+  private def filterGamesFor(playerId: Long) = query.filter(r => r.winnerId === playerId || r.loserId === playerId)
 
   /**
     * Get all game results.
@@ -74,23 +74,19 @@ class ResultManager @Inject()(val appProvider: Provider[Application])
       case None => query
       case Some(id) => filterGamesFor(id)
     }
-    db.run(q.join(userQuery).on(_.player1Id === _.id).join(userQuery).on(_._1.player2Id === _.id).result)
+    db.run(q.join(userQuery).on(_.winnerId === _.id).join(userQuery).on(_._1.loserId === _.id).result)
       .map(e => e.map(r => ResultsWithUser(r._1._1, r._1._2, r._2)))
   }
 
 
   /**
-    * Get the number of games won for the givne user.
+    * Get the number of games won for the given user.
     *
     * @param playerId player id
     * @return number of won games
     */
-  def getNumberOfGamesWonFor(playerId: Long): Future[Int] = {
-    db.run(query.filter(r =>
-      (r.player1Id === playerId && r.player1Score > r.player2Score) ||
-        (r.player2Id === playerId && r.player2Score > r.player1Score)
-    ).length.result)
-  }
+  def getNumberOfGamesWonFor(playerId: Long): Future[Int] =
+    db.run(query.filter(r => r.winnerId === playerId).length.result)
 
   /**
     * Get the number of pieces put by the given player.
@@ -100,7 +96,7 @@ class ResultManager @Inject()(val appProvider: Provider[Application])
     */
   def getNumberOfPiecesPlayedFor(playerId: Long): Future[Long] = {
     db.run(filterGamesFor(playerId).map({ result =>
-      Case If result.player1Id === playerId Then result.player1Pieces Else result.player2Pieces
+      Case If result.winnerId === playerId Then result.winnerPieces Else result.loserPieces
     }).sum.result).map(_.getOrElse(0))
   }
 
@@ -112,7 +108,7 @@ class ResultManager @Inject()(val appProvider: Provider[Application])
     */
   def getMaximumPointsFor(playerId: Long): Future[Long] = {
     db.run(filterGamesFor(playerId).map({ result =>
-      Case If result.player1Id === playerId Then result.player1Score Else result.player2Score
+      Case If result.winnerId === playerId Then result.winnerScore Else result.loserScore
     }).max.result).map(_.getOrElse(0))
   }
 
@@ -123,7 +119,7 @@ class ResultManager @Inject()(val appProvider: Provider[Application])
     * @return total time played by the given user.
     */
   def getTimePlayedFor(playerId: Long): Future[Long] = {
-    db.run(filterGamesFor(playerId).map(_.time).sum.result).map(_.getOrElse(0))
+    db.run(filterGamesFor(playerId).map(_.duration).sum.result).map(_.getOrElse(0))
   }
 
   /**
@@ -133,8 +129,8 @@ class ResultManager @Inject()(val appProvider: Provider[Application])
     */
   def getHighestScores: Future[Seq[UserScore]] = {
     db.run(
-      query.map(res => (res.player1Id, res.player1Score, res.player1Pieces, res.time))
-        .union(query.map(res => (res.player2Id, res.player2Score, res.player2Pieces, res.time)))
+      query.map(res => (res.winnerId, res.winnerScore, res.winnerPieces, res.duration))
+        .union(query.map(res => (res.loserId, res.loserScore, res.loserPieces, res.duration)))
         .groupBy(_._1)
         .map({
           case (playerId, data) => (playerId, data.map(_._2).max, data.map(_._3).max, data.map(_._4).max)
