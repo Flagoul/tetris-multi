@@ -8,8 +8,6 @@ object PiecesWithPosition {
   class PieceWithPosition(val piece: Piece, grid: Array[Array[Boolean]], initPos: Position) {
     protected var positions: List[Position] = initPiecePositions()
 
-    addToGrid()
-
     /**
       * Creates positions for the piece, based on the position where to start drawing.
       *
