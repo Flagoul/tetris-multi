@@ -188,11 +188,14 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
     player1.out ! PoisonPill
     player2.out ! PoisonPill
 
+    // If the player loses by leaving the game when in the lobby, the game time should be 0.
+    val timeSpent = if (everyoneReady()) (System.currentTimeMillis() - gameBeganAt) / 1000 else 0
+
     gameManager.endGame(Result(
       None,
       player1.user.id.get, player1.state.points, player1.state.piecesPlaced,
       player2.user.id.get, player2.state.points, player2.state.piecesPlaced,
-      (System.currentTimeMillis() - gameBeganAt) / 1000
+      timeSpent
     ))
 
     println(s"Game took ${(System.currentTimeMillis() - gameBeganAt) / 1000} seconds")
