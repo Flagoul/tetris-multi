@@ -29,12 +29,31 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
   private val system = akka.actor.ActorSystem("system")
   import system.dispatcher
 
-  private def opponent(player: PlayerWithState): PlayerWithState = {
-    if (player  == player1) player2
-    else player1
+  def setReady(implicit id: Long): Unit = {
+    val player = players(id)
+    player.state.ready = true
+    println(id + " is ready")
+    broadcast(player, Json.obj(GameAPIKeys.ready -> true))
+
+    if (opponent(player).state.ready) {
+      initGame()
+    }
   }
 
   def everyoneReady(): Boolean = player1.state.ready && player2.state.ready
+
+  private def initGame(): Unit = {
+    player1.state.curPiece.addToGrid()
+    player2.state.curPiece.addToGrid()
+
+    broadcastState(player1)
+    broadcastState(player2)
+
+    gameBeganAt = System.currentTimeMillis()
+
+    gameTick(player1)
+    gameTick(player2)
+  }
 
   def movePiece(action: Action)(implicit id: Long): Unit = this.synchronized {
     if (!everyoneReady()) {
@@ -58,47 +77,6 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
     }
   }
 
-  def setReady(implicit id: Long): Unit = {
-    val player = players(id)
-    player.state.ready = true
-    println(id + " is ready")
-    broadcast(player, Json.obj(GameAPIKeys.ready -> true))
-
-    if (opponent(player).state.ready) {
-      initGame()
-    }
-  }
-
-  def initGame(): Unit = {
-    broadcastState(player1)
-    broadcastState(player2)
-
-    gameBeganAt = System.currentTimeMillis()
-
-    gameTick(player1)
-    gameTick(player2)
-  }
-
-  def buildState(player: PlayerWithState): JsObject = {
-    Json.obj(
-      GameAPIKeys.gameGrid -> player.state.gameGrid,
-      GameAPIKeys.nextPieceGrid -> player.state.nextPieceGrid,
-      GameAPIKeys.piecesPlaced -> player.state.piecesPlaced,
-      GameAPIKeys.points -> player.state.points,
-      piecePositionsToKeyVal(player)
-    )
-  }
-
-  def broadcastState(player: PlayerWithState): Unit = {
-    broadcast(player, buildState(player))
-  }
-
-  def sendState(dest: PlayerWithState, playerWithStateToSend: PlayerWithState): Unit = {
-    dest.out ! (
-      buildState(playerWithStateToSend) + (GameAPIKeys.opponent -> JsBoolean(dest != playerWithStateToSend))
-    ).toString()
-  }
-
   def putBackPlayerInGame(out: ActorRef)(implicit id: Long): Unit = this.synchronized {
     val player = players(id)
     val opp = opponent(player)
@@ -108,6 +86,31 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
     player.out ! Json.obj(GameAPIKeys.opponentUsername -> opp.user.username).toString()
     sendState(player, player)
     sendState(player, opp)
+  }
+
+  private def opponent(player: PlayerWithState): PlayerWithState = {
+    if (player  == player1) player2
+    else player1
+  }
+
+  private def buildState(player: PlayerWithState): JsObject = {
+    Json.obj(
+      GameAPIKeys.gameGrid -> player.state.gameGrid,
+      GameAPIKeys.nextPieceGrid -> player.state.nextPieceGrid,
+      GameAPIKeys.piecesPlaced -> player.state.piecesPlaced,
+      GameAPIKeys.points -> player.state.points,
+      piecePositionsToKeyVal(player)
+    )
+  }
+
+  private def broadcastState(player: PlayerWithState): Unit = {
+    broadcast(player, buildState(player))
+  }
+
+  private def sendState(dest: PlayerWithState, playerWithStateToSend: PlayerWithState): Unit = {
+    dest.out ! (
+      buildState(playerWithStateToSend) + (GameAPIKeys.opponent -> JsBoolean(dest != playerWithStateToSend))
+    ).toString()
   }
 
   private def handlePieceBottom(player: PlayerWithState): Unit = this.synchronized {
@@ -136,13 +139,20 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
     generateNewPiece(player)
   }
 
-  private def generateNewPiece(player: PlayerWithState) = {
+  private def generateNewPiece(player: PlayerWithState): Unit = {
     val state = player.state
     state.curPiece = new GamePiece(state.nextPiece.piece, state.gameGrid)
+
+    if (state.curPiece.wouldCollideIfAddedToGrid()) {
+      lose(player)
+      return
+    }
+
     state.curPiece.addToGrid()
 
     state.nextPiece.removeFromGrid()
     state.nextPiece = new NextPiece(randomPiece(), state.nextPieceGrid)
+
     state.nextPiece.addToGrid()
 
     broadcastPiecePositions(player)
@@ -166,39 +176,41 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
     }
   }
 
-  def broadcast(player: PlayerWithState, jsonObj: JsObject): Unit = {
+  private def broadcast(player: PlayerWithState, jsonObj: JsObject): Unit = {
     player.out ! (jsonObj + (GameAPIKeys.opponent -> JsBoolean(false))).toString()
     opponent(player).out ! (jsonObj + (GameAPIKeys.opponent -> JsBoolean(true))).toString()
   }
 
-  def broadcastPiecePositions(player: PlayerWithState): Unit = {
+  private def broadcastPiecePositions(player: PlayerWithState): Unit = {
     broadcast(player, Json.obj(piecePositionsToKeyVal(player)))
   }
 
-  def piecePositionsToKeyVal(player: PlayerWithState): (String, JsValueWrapper) = {
+  private def piecePositionsToKeyVal(player: PlayerWithState): (String, JsValueWrapper) = {
     GameAPIKeys.piecePositions -> player.state.curPiece.getPositions.map(p => Array(p._1, p._2))
   }
 
-  private def lose(player: PlayerWithState): Unit = {
-    gameFinished = true
+  private def lose(player: PlayerWithState): Unit = this.synchronized {
+    if (!gameFinished) {
+      gameFinished = true
 
-    player.out ! Json.obj(GameAPIKeys.won -> JsBoolean(false)).toString()
-    opponent(player).out ! Json.obj(GameAPIKeys.won -> JsBoolean(true)).toString()
+      player.out ! Json.obj(GameAPIKeys.won -> JsBoolean(false)).toString()
+      opponent(player).out ! Json.obj(GameAPIKeys.won -> JsBoolean(true)).toString()
 
-    player1.out ! PoisonPill
-    player2.out ! PoisonPill
+      player1.out ! PoisonPill
+      player2.out ! PoisonPill
 
-    // If the player loses by leaving the game when in the lobby, the game time should be 0.
-    val timeSpent = if (everyoneReady()) (System.currentTimeMillis() - gameBeganAt) / 1000 else 0
+      // If the player loses by leaving the game when in the lobby, the game time should be 0.
+      val timeSpent = if (everyoneReady()) (System.currentTimeMillis() - gameBeganAt) / 1000 else 0
 
-    gameManager.endGame(Result(
-      None,
-      player1.user.id.get, player1.state.points, player1.state.piecesPlaced,
-      player2.user.id.get, player2.state.points, player2.state.piecesPlaced,
-      timeSpent
-    ))
+      gameManager.endGame(Result(
+        None,
+        player1.user.id.get, player1.state.points, player1.state.piecesPlaced,
+        player2.user.id.get, player2.state.points, player2.state.piecesPlaced,
+        timeSpent
+      ))
 
-    println(s"Game took ${(System.currentTimeMillis() - gameBeganAt) / 1000} seconds")
+      println(s"Game took ${(System.currentTimeMillis() - gameBeganAt) / 1000} seconds")
+    }
   }
 
   def lose(implicit id: Long): Unit = {
