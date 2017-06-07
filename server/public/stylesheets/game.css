@@ -55,7 +55,7 @@
 
 .layer p {
     text-align: center;
-    font-size: 3vw;
+    font-size: 4vmin;
 }
 
 .game {
@@ -65,7 +65,7 @@
 .game-info {
     padding-top: 5px;
     border-left: 1px solid grey;
-    font-size: 1.2vw;
+    font-size: 1.5vmin;
 }
 
 .next-piece-title {
@@ -75,13 +75,13 @@
 }
 
 .next-piece-title > p {
-    font-size: 1.7vw;
+    font-size: 2vmin;
     margin-bottom: -10px;
 }
 
 .next-piece {
     display: block;
-    margin: 10%;
+    margin: 1.5vmin 10% 10%;
     padding: 0;
 }
 
