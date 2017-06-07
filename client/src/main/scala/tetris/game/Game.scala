@@ -82,7 +82,8 @@ class Game {
       case 37 | 65 => sendAction(Left)
       case 38 | 87 => sendAction(Rotate)
       case 39 | 68 => sendAction(Right)
-      case 40 | 83 => sendAction(Fall)
+      case 40 | 83 => sendAction(Down)
+      case 32 => sendAction(Fall)
       case _ =>
     }
   }

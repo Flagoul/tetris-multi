@@ -47,8 +47,9 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
     val moved: Boolean = action match {
       case Left => gs.curPiece.moveLeft()
       case Right => gs.curPiece.moveRight()
-      case Fall => gs.curPiece.fall()
       case Rotate => gs.curPiece.rotate()
+      case Down => gs.curPiece.moveDown()
+      case Fall => gs.curPiece.fall()
     }
 
     if (moved) {
