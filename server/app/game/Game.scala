@@ -123,6 +123,10 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
     state.piecesPlaced += 1
     state.points += GameRules.pointsForPieceDown(nBlocksAbove, removed.length, state.gameSpeed)
 
+    val newSpeed = GameRules.nextSpeed(state.gameSpeed, removed.length)
+    state.gameSpeed = newSpeed
+    opp.state.gameSpeed = newSpeed
+
     val oppLost = sendLinesToOpponent(removed, state, opp)
     if (oppLost) {
       lose(opp)
@@ -139,8 +143,6 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
     state.nextPiece.removeFromGrid()
     state.nextPiece = new NextPiece(randomPiece(), state.nextPieceGrid)
     state.nextPiece.addToGrid()
-
-    state.gameSpeed = GameRules.nextSpeed(state.gameSpeed)
 
     broadcastPiecePositions(player)
 

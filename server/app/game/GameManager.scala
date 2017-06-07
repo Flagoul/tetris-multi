@@ -1,6 +1,5 @@
 package game
 
-import akka.actor.ActorRef
 import managers.ResultManager
 import models.Result
 import play.api.libs.json.Json
