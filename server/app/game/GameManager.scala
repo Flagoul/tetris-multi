@@ -18,16 +18,33 @@ case class GameManager(results: ResultManager) {
 
   def isPlayerInGame(implicit id: Long): Boolean = games.contains(id)
 
-  def putBackPlayerInGame(out: ActorRef)(implicit id: Long): Unit = {
+  def putBackPlayerInGame(player: Player)(implicit id: Long): Unit = {
     val game = games(id)
-    game.putBackPlayerInGame(out)
+
+    if (game.everyoneReady()) {
+      game.putBackPlayerInGame(player.out)
+    }
+    else {
+      // FIXME make the player lose but use a timeout as well, not only check here at reconnection
+      game.lose
+      joinGame(player)
+    }
   }
 
-  def joinGame(player: Player): Unit = this.synchronized {
-    val playerId = player.user.id.get
+  def joinGame(player: Player)(implicit id: Long): Unit = this.synchronized {
+    if (isPlayerInGame) {
+      println("putting back player in game")
+      putBackPlayerInGame(player)
+      return
+    }
+
+    if (isPlayerWaiting) {
+      println("Removing player and putting back in waiting list")
+      removeWaitingPlayer
+    }
 
     if (waitingPlayers.isEmpty) {
-      waitingPlayers += (playerId -> player)
+      waitingPlayers += (id -> player)
       println("waiting")
     }
     else {
@@ -39,7 +56,7 @@ case class GameManager(results: ResultManager) {
 
       val game = new Game(player, opponent, this)
 
-      games += (playerId -> game)
+      games += (id -> game)
       games += (opponentId -> game)
 
       println("playing")
@@ -48,7 +65,7 @@ case class GameManager(results: ResultManager) {
     }
   }
 
-  def getGame(implicit id: Long): Game = games.getOrElse(id, null)
+  def getGame(implicit id: Long): Option[Game] = games.get(id)
 
   def endGame(result: Result): Unit = {
     games -= result.player1Id

@@ -36,29 +36,13 @@ class GameWSController @Inject()(sessions: SessionManager, users: UserManager, r
   class GameWSActor(out: ActorRef, user: User)(implicit id: Long) extends Actor {
     override def preStart(): Unit = {
       super.preStart()
-
-      if (gameManager.isPlayerInGame) {
-        println("putting back player in game")
-        println("out", out)
-        gameManager.putBackPlayerInGame(out)
-        return
-      }
-
-      if (gameManager.isPlayerWaiting) {
-        println("Removing player and putting back in waiting list")
-        gameManager.removeWaitingPlayer
-      }
-
       gameManager.joinGame(Player(user, out))
     }
 
     def receive: PartialFunction[Any, Unit] = {
       case msg: String => {
         try {
-          val data: JsValue = Json.parse(msg)
-
-          handleAction((data \ GameAPIKeys.action).as[String])
-
+          handleAction((Json.parse(msg) \ GameAPIKeys.action).as[String])
         } catch {
           case e: JsResultException =>
             logger.warn(s"Invalid json: ${e.errors}")
@@ -71,23 +55,20 @@ class GameWSController @Inject()(sessions: SessionManager, users: UserManager, r
     }
 
     def handleAction(action: String)(implicit id: Long): Unit = {
-      val game = gameManager.getGame
-
-      if (game == null) {
-        out ! Json.obj(GameAPIKeys.error -> "There is no opponent yet!").toString()
-        return
-      }
-
-      action match {
-        case "start" => game.setReady
-        case "quit" => game.lose
-        case "left" => game.movePiece(Actions.Left)
-        case "right" => game.movePiece(Actions.Right)
-        case "rotate" => game.movePiece(Actions.Rotate)
-        case "fall" => game.movePiece(Actions.Fall)
-        case _ =>
-          logger.warn(s"Unknown action received: $action")
-          self ! PoisonPill
+      gameManager.getGame match {
+        case Some(game) =>
+          action match {
+            case "start" => game.setReady
+            case "left" => game.movePiece(Actions.Left)
+            case "right" => game.movePiece(Actions.Right)
+            case "rotate" => game.movePiece(Actions.Rotate)
+            case "fall" => game.movePiece(Actions.Fall)
+            case _ =>
+              logger.warn(s"Unknown action received: $action")
+              self ! PoisonPill
+          }
+        case None =>
+          out ! Json.obj(GameAPIKeys.error -> "There is no opponent yet!").toString()
       }
     }
   }

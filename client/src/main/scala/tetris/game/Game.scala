@@ -142,6 +142,7 @@ class Game {
   private def handlesGameEnd(data: JValue): Unit = {
     playerGB.showLayer()
     opponentGB.showLayer()
+    startButton.style.display = "none"
 
     if (wonExists(data)) {
       val winnerGB = if (getWonValue(data)) playerGB else opponentGB
@@ -164,6 +165,7 @@ class Game {
   private def handleGame(data: JValue): Unit = {
     playerGB.hideLayer()
     opponentGB.hideLayer()
+    startButton.style.display = "none"
 
     val opponent = getOpponentValue(data)
     drawGridIfExists(data, GameAPIKeys.gameGrid, opponent)

@@ -92,21 +92,21 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
     broadcast(player, buildState(player))
   }
 
-  def sendState(player: PlayerWithState, isOpponent: Boolean): Unit = {
-    player.out ! (buildState(player) + (GameAPIKeys.opponent -> JsBoolean(isOpponent))).toString()
+  def sendState(dest: PlayerWithState, playerWithStateToSend: PlayerWithState): Unit = {
+    dest.out ! (
+      buildState(playerWithStateToSend) + (GameAPIKeys.opponent -> JsBoolean(dest != playerWithStateToSend))
+    ).toString()
   }
 
   def putBackPlayerInGame(out: ActorRef)(implicit id: Long): Unit = this.synchronized {
     val player = players(id)
     val opp = opponent(player)
 
-    println("out", out)
-
     player.changeActorRef(out)
 
     player.out ! Json.obj(GameAPIKeys.opponentUsername -> opp.user.username).toString()
-    sendState(player, isOpponent = false)
-    sendState(opp, isOpponent = true)
+    sendState(player, player)
+    sendState(player, opp)
   }
 
   private def handlePieceBottom(player: PlayerWithState): Unit = this.synchronized {
