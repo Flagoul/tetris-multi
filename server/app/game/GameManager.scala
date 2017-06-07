@@ -67,8 +67,8 @@ case class GameManager(results: ResultManager) {
   def getGame(implicit id: Long): Option[Game] = games.get(id)
 
   def endGame(result: Result): Unit = {
-    games -= result.player1Id
-    games -= result.player2Id
+    games -= result.winnerId
+    games -= result.loserId
 
     results.create(result)
   }

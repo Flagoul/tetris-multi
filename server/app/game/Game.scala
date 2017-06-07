@@ -189,27 +189,27 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
     GameAPIKeys.piecePositions -> player.state.curPiece.getPositions.map(p => Array(p._1, p._2))
   }
 
-  private def lose(player: PlayerWithState): Unit = this.synchronized {
+  private def lose(loser: PlayerWithState): Unit = this.synchronized {
     if (!gameFinished) {
       gameFinished = true
 
-      player.out ! Json.obj(GameAPIKeys.won -> JsBoolean(false)).toString()
-      opponent(player).out ! Json.obj(GameAPIKeys.won -> JsBoolean(true)).toString()
+      val winner = opponent(loser)
 
-      player1.out ! PoisonPill
-      player2.out ! PoisonPill
+      loser.out ! Json.obj(GameAPIKeys.won -> JsBoolean(false)).toString()
+      winner.out ! Json.obj(GameAPIKeys.won -> JsBoolean(true)).toString()
+
+      loser.out ! PoisonPill
+      winner.out ! PoisonPill
 
       // If the player loses by leaving the game when in the lobby, the game time should be 0.
       val timeSpent = if (everyoneReady()) (System.currentTimeMillis() - gameBeganAt) / 1000 else 0
 
       gameManager.endGame(Result(
         None,
-        player1.user.id.get, player1.state.points, player1.state.piecesPlaced,
-        player2.user.id.get, player2.state.points, player2.state.piecesPlaced,
-        timeSpent
+        winner.user.id.get, winner.state.points, winner.state.piecesPlaced,
+        loser.user.id.get, loser.state.points, loser.state.piecesPlaced,
+        timeSpent, None
       ))
-
-      println(s"Game took ${(System.currentTimeMillis() - gameBeganAt) / 1000} seconds")
     }
   }
 

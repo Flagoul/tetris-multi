@@ -2,6 +2,9 @@
 @import managers.ResultsWithUser
 @import views.html.styles.datatablesCSS
 
+@import java.sql.Timestamp
+
+
 @(user: User, games: Seq[ResultsWithUser], won: Int, piecesPlayed: Long, maximumPoints: Long, timePlayed: Long)(implicit request: AuthenticatedRequest[AnyContent])
 
 
@@ -10,14 +13,15 @@
     <div class="col-6 col-md-3 col-xl-2 text-right list-group-item">@value</div>
 }
 
-@resultRow(player: (Long, Long), opponent: (Long, Long), opponentInfo: User, time: Long) = {
-    <tr class="@("table-success".when(player._1 > opponent._1)) @("table-danger".when(player._1 < opponent._1))">
+@resultRow(player: (Long, Long), opponent: (Long, Long), opponentInfo: User, duration: Long, date: Timestamp, won: Boolean) = {
+    <tr class="@("table-success".when(won)) @("table-danger".when(!won))">
+        <td>@date.format("yyyy-MMM-dd HH:mm:ss")</td>
         <td class="text-right">@player._1</td>
         <td class="text-right">@player._2</td>
-        <td><a href="@routes.Stats.userStats(opponentInfo.id.get)">@opponentInfo.username</td>
+        <td><a href="@routes.Stats.userStats(opponentInfo.id.get)">@opponentInfo.username</a></td>
         <td class="text-right">@opponent._1</td>
         <td class="text-right">@opponent._2</td>
-        <td class="text-right">@(time / 60)[min]</td>
+        <td class="text-right">@(duration / 60)[min]</td>
     </tr>
 }
 
@@ -36,7 +40,7 @@
                         @if(games.length - won == 0) {
                             @addStat("Win/Lose Ratio", won.toString)
                         } else {
-                            @addStat("Win/Lose Ratio", "%.2f".format((won / ((games.length - won) * 1.0))))
+                            @addStat("Win/Lose Ratio", "%.2f".format(won / ((games.length - won) * 1.0)))
                         }
 
                         @addStat("Pieces played", piecesPlayed.toString)
@@ -53,6 +57,7 @@
             <table class="table table-stripped table-bordered" dataTable>
                 <thead class="thead-inverse">
                     <tr>
+                        <th>Date</th>
                         <th>Score</th>
                         <th>Pieces</th>
                         <th>Opponent</th>
@@ -64,12 +69,12 @@
 
                 <tbody>
                     @for(game <- games) {
-                        @defining((game.result.player1Score, game.result.player1Pieces)) { p1Stats =>
-                            @defining((game.result.player2Score, game.result.player2Pieces)) { p2Stats =>
-                                @if(game.result.player1Id == user.id.get) {
-                                    @resultRow(p1Stats, p2Stats, game.player2, game.result.time)
+                        @defining((game.result.winnerScore, game.result.winnerPieces)) { p1Stats =>
+                            @defining((game.result.loserScore, game.result.loserPieces)) { p2Stats =>
+                                @if(game.result.winnerId == user.id.get) {
+                                    @resultRow(p1Stats, p2Stats, game.loser, game.result.duration, game.result.timestamp.get, won = true)
                                 } else {
-                                    @resultRow(p2Stats, p1Stats, game.player1, game.result.time)
+                                    @resultRow(p2Stats, p1Stats, game.winner, game.result.duration, game.result.timestamp.get, won = false)
                                 }
                             }
                         }

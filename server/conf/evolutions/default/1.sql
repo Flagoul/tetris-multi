@@ -18,18 +18,19 @@ CREATE TABLE sessions (
 
 CREATE TABLE results (
   id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  player_1_id BIGINT NOT NULL,
-  player_1_score BIGINT NOT NULL,
-  player_1_pieces BIGINT NOT NULL,
+  winner_id BIGINT NOT NULL,
+  winner_score BIGINT NOT NULL,
+  winner_pieces BIGINT NOT NULL,
 
-  player_2_id BIGINT NOT NULL,
-  player_2_score BIGINT NOT NULL,
-  player_2_pieces BIGINT NOT NULL,
+  loser_id BIGINT NOT NULL,
+  loser_score BIGINT NOT NULL,
+  loser_pieces BIGINT NOT NULL,
 
-  time BIGINT NOT NULL,
+  duration BIGINT NOT NULL,
+  timestamp TIMESTAMP DEFAULT NOW(),
 
-  FOREIGN KEY (player_1_id) REFERENCES users(id),
-  FOREIGN KEY (player_2_id) REFERENCES users(id)
+  FOREIGN KEY (winner_id) REFERENCES users(id),
+  FOREIGN KEY (loser_id) REFERENCES users(id)
 );
 
 
