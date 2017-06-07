@@ -14,7 +14,7 @@
     <div class="container">
         <div class="row">
             <div class="col-1"></div>
-            <div id="games" class="col-10 container-fluid">
+            <div id="main-container" class="col-10 container-fluid">
                 <div class="container-fluid">
                     <div class="row">
                         <div id="player-username" class="col-6 username">@(username)</div>
@@ -26,6 +26,10 @@
                     @gamebox("opponent")
                 </div>
                 <div id="error" class="row"></div>
+                <div id="end-buttons">
+                    <a href="/game" class="btn btn-primary">Play again!</a>
+                    <a href="/scores" class="btn btn-info">High scores</a>
+                </div>
             </div>
             <div class="col-1"></div>
         </div>

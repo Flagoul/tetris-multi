@@ -1,4 +1,4 @@
-#games {
+#main-container {
     margin-top: 10px;
 }
 
@@ -58,6 +58,10 @@
     font-size: 4vmin;
 }
 
+#ready-button {
+    display: none;
+}
+
 .game {
     padding: 0;
 }
@@ -91,4 +95,13 @@
 
     font-size: 2vw;
     color: crimson;
+}
+
+#end-buttons {
+    display: none;
+    text-align: center;
+}
+
+#end-buttons > * {
+    margin: 5px;
 }
