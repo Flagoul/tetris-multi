@@ -19,6 +19,7 @@ import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
   * - a button with id #ready-button must exist in order for this class to bind the click event
   * - a div with the id #opponent-username to set the player's opponent username when he joins.
   * - a div with the id #error to display errors
+  * - a div with the id #end-buttons containing the buttons with various actions suggested to player at the end
   */
 @JSExportTopLevel("tetris.Game")
 class Game {
@@ -29,6 +30,9 @@ class Game {
   // The opponent's username
   private val opponentUsername: HTMLDivElement = dom.document.querySelector("#opponent-username").asInstanceOf[HTMLDivElement]
 
+  // The buttons with the actions displayable at the end
+  private val endButtons: HTMLDivElement = dom.document.querySelector("#end-buttons").asInstanceOf[HTMLDivElement]
+
   private val wsProtocol = dom.window.location.protocol match {
     case "http:" => "ws"
     case "https:" => "wss"
@@ -38,7 +42,7 @@ class Game {
   private val ws = new WebSocket(s"$wsProtocol://${dom.window.location.host}/ws")
 
   // The start button on the player side
-  private val startButton: HTMLButtonElement = dom.document.querySelector("#ready-button").asInstanceOf[HTMLButtonElement]
+  private val readyButton: HTMLButtonElement = dom.document.querySelector("#ready-button").asInstanceOf[HTMLButtonElement]
 
   private val error: HTMLDivElement = dom.document.querySelector("#error").asInstanceOf[HTMLDivElement]
 
@@ -52,7 +56,7 @@ class Game {
     opponentGB.drawGame()
     opponentGB.drawNextPieceGrid()
 
-    startButton.onclick = (_: MouseEvent) => sendAction(Start)
+    readyButton.onclick = (_: MouseEvent) => sendAction(Start)
 
     dom.window.onkeydown = (e: dom.KeyboardEvent) => handleKeyDown(e.keyCode)
 
@@ -113,6 +117,9 @@ class Game {
   private def handleOpponentUsername(data: JValue): Unit = {
     opponentUsername.innerHTML = getOpponentUsername(data)
     opponentGB.setLayerText("Not ready")
+
+    readyButton.style.display = "block"
+    playerGB.setLayerText("")
   }
 
   /**
@@ -129,7 +136,7 @@ class Game {
     }
     else {
       playerGB.setLayerText("Ready")
-      startButton.style.display = "none"
+      readyButton.style.display = "none"
     }
   }
 
@@ -143,7 +150,8 @@ class Game {
   private def handlesGameEnd(data: JValue): Unit = {
     playerGB.showLayer()
     opponentGB.showLayer()
-    startButton.style.display = "none"
+    readyButton.style.display = "none"
+    endButtons.style.display = "block"
 
     if (wonExists(data)) {
       val winnerGB = if (getWonValue(data)) playerGB else opponentGB
@@ -166,7 +174,7 @@ class Game {
   private def handleGame(data: JValue): Unit = {
     playerGB.hideLayer()
     opponentGB.hideLayer()
-    startButton.style.display = "none"
+    readyButton.style.display = "none"
 
     val opponent = getOpponentValue(data)
     drawGridIfExists(data, GameAPIKeys.gameGrid, opponent)
