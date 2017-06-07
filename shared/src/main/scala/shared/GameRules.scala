@@ -18,7 +18,8 @@ object GameRules {
     nBlocksAbove + linePoints * ((initGameSpeed - gameSpeed)/100 + 1)
   }
 
-  def nextSpeed(gameSpeed: Long): Long = {
-    gameSpeed - (gameSpeed * 0.03).toLong
+  def nextSpeed(gameSpeed: Long, nLinesCompleted: Int): Long = {
+    if (nLinesCompleted <= 0) gameSpeed
+    else nextSpeed(gameSpeed - (gameSpeed * 0.03).toLong, nLinesCompleted - 1)
   }
 }
