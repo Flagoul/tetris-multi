@@ -62,6 +62,7 @@ class GameWSController @Inject()(sessions: SessionManager, users: UserManager, r
             case "left" => game.movePiece(Actions.Left)
             case "right" => game.movePiece(Actions.Right)
             case "rotate" => game.movePiece(Actions.Rotate)
+            case "down" => game.movePiece(Actions.Down)
             case "fall" => game.movePiece(Actions.Fall)
             case _ =>
               logger.warn(s"Unknown action received: $action")
