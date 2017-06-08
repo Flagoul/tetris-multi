@@ -3,7 +3,7 @@ import game.{Game, GameState, Player}
 import shared.GameRules.{nGameCols, nGameRows}
 
 class TestGame extends FunSuite with BeforeAndAfter with PrivateMethodTester {
-  val game = new Game(Player("1", null), Player("2", null), null)
+  val game = new Game(Player(null, null), Player(null, null), null)
   val state = new GameState()
   val emptyGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
   val emptyRow: Array[Boolean] = Array.ofDim[Boolean](nGameCols)
@@ -13,7 +13,7 @@ class TestGame extends FunSuite with BeforeAndAfter with PrivateMethodTester {
   incompleteLine(0) = true
 
   before {
-    grid = emptyGrid.clone()
+    grid = emptyGrid.map(_.clone)
   }
 
   test("Lines deletion: 1 line") {

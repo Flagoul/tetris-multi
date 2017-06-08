@@ -74,7 +74,7 @@ object PiecesWithPosition {
     def inBoundRight(p: Position): Boolean = p._2 < nGameCols
     def inBoundBottom(p: Position): Boolean = p._1 < nGameRows
     def inBoundUp(p: Position): Boolean = p._1 >= 0
-    def inBounds(p: Position): Boolean = inBoundLeft(p) && inBoundRight(p) && inBoundBottom(p)
+    def inBounds(p: Position): Boolean = inBoundLeft(p) && inBoundRight(p) && inBoundBottom(p) && inBoundUp(p)
 
     def transformLeft(p: Position): Position = (p._1, p._2 - 1)
     def transformRight(p: Position): Position = (p._1, p._2 + 1)
@@ -85,6 +85,19 @@ object PiecesWithPosition {
     def moveRight(updateGridOnMove: Boolean = true): Boolean = move(transformRight, inBoundRight, updateGridOnMove)
     def moveDown(updateGridOnMove: Boolean = true): Boolean = move(transformDown, inBoundBottom, updateGridOnMove)
     def moveUp(updateGridOnMove: Boolean = true): Boolean = move(transformUp, inBoundUp, updateGridOnMove)
+
+    def moveUpWithOnlyGridCheck(updateGridOnMove: Boolean = true): Boolean = {
+      val newPositions = positions.map(transformUp)
+
+      if (isInBounds) {
+        if (updateGridOnMove) updateGrid(newPositions)
+        else positions = newPositions
+      }
+
+      isInBounds
+    }
+
+    def isInBounds: Boolean = positions.forall(p => inBounds(p))
 
     def wouldCollideIfAddedToGrid(): Boolean = positions.exists(p => gameGrid(p._1)(p._2))
 
