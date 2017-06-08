@@ -11,27 +11,28 @@
 }
 
 @main("", stylesheets = stylesheets, scripts = scripts) {
-    <div class="container">
-        <div class="row">
-            <div class="col-1"></div>
-            <div id="main-container" class="col-10 container-fluid">
-                <div class="container-fluid">
-                    <div class="row">
-                        <div id="player-username" class="col-6 username">@(username)</div>
-                        <div id="opponent-username" class="col-6 username">?</div>
-                    </div>
-                </div>
+    <div class="row">
+        <div id="main-container" class="col-10 container-fluid">
+            <div class="container-fluid">
                 <div class="row">
-                    @gamebox("player")
-                    @gamebox("opponent")
-                </div>
-                <div id="error" class="row"></div>
-                <div id="end-buttons">
-                    <a href="/game" class="btn btn-primary">Play again!</a>
-                    <a href="/scores" class="btn btn-info">High scores</a>
+                    <div id="player-username" class="col-6 username">@(username)</div>
+                    <div id="opponent-username" class="col-6 username">?</div>
                 </div>
             </div>
-            <div class="col-1"></div>
+            <div class="row">
+                @gamebox("player")
+                @gamebox("opponent")
+            </div>
+            <div id="controls" class="row">
+                <p>
+                    Use <b>WASD</b> or <b>arrow keys</b> to move/rotate piece and <b>space bar</b> to make it fall.
+                </p>
+            </div>
+            <div id="error" class="row"></div>
+            <div id="end-buttons">
+                <a href="/game" class="btn btn-primary">Play again!</a>
+                <a href="/scores" class="btn btn-info">High scores</a>
+            </div>
         </div>
     </div>
 }
