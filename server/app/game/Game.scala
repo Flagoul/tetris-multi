@@ -46,6 +46,9 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
     player1.state.curPiece.addToGrid()
     player2.state.curPiece.addToGrid()
 
+    player1.state.nextPiece.addToGrid()
+    player2.state.nextPiece.addToGrid()
+
     broadcastState(player1)
     broadcastState(player2)
 
@@ -89,7 +92,7 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
   }
 
   private def opponent(player: PlayerWithState): PlayerWithState = {
-    if (player  == player1) player2
+    if (player == player1) player2
     else player1
   }
 
@@ -134,6 +137,7 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
     val oppLost = sendLinesToOpponent(removed, state, opp)
     if (oppLost) {
       lose(opp)
+      return
     }
 
     generateNewPiece(player)
@@ -152,7 +156,6 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
 
     state.nextPiece.removeFromGrid()
     state.nextPiece = new NextPiece(randomPiece(), state.nextPieceGrid)
-
     state.nextPiece.addToGrid()
 
     broadcastPiecePositions(player)
@@ -166,7 +169,9 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
   }
 
   private def gameTick(player: PlayerWithState): Unit = {
-    if (gameFinished) return
+    if (gameFinished) {
+      return
+    }
 
     system.scheduler.scheduleOnce(player.state.gameSpeed.milliseconds) {
       if (!player.state.curPiece.moveDown()) handlePieceBottom(player)
@@ -222,7 +227,7 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
       .zipWithIndex
       .partition(p => p._1.count(x => x) == nGameCols)
 
-    val newValues = Array.ofDim[Boolean](removed.length, nGameCols) ++ kept.map(_._1.map(identity))
+    val newValues = Array.ofDim[Boolean](removed.length, nGameCols) ++ kept.map(_._1.clone)
     state.updateGameGrid(newValues)
 
     removed
@@ -240,23 +245,31 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
       case _ => linesBeforeCompleted
     }
 
-    if (toSend.nonEmpty) {
-      val oppPiece = opp.state.curPiece
-
-      oppPiece.removeFromGrid()
-      opp.state.updateGameGrid(opp.state.gameGrid.drop(toSend.length) ++ toSend)
-
-      while (oppPiece.wouldCollideIfAddedToGrid()) {
-        if (!oppPiece.moveUp(updateGridOnMove = false)) {
-          return true
-        }
-      }
-
-      oppPiece.addToGrid()
+    if (pushLinesToGrid(toSend, opp.state)) {
+      return true
     }
 
     broadcastPiecePositions(opp)
     broadcast(opp, Json.obj(GameAPIKeys.gameGrid -> opp.state.gameGrid))
+    false
+  }
+
+  def pushLinesToGrid(toPush: Array[Array[Boolean]], state: GameState): Boolean = {
+    if (toPush.nonEmpty) {
+      val piece = state.curPiece
+
+      piece.removeFromGrid()
+
+      state.updateGameGrid(state.gameGrid.drop(toPush.length).map(_.clone) ++ toPush)
+
+      while (piece.wouldCollideIfAddedToGrid()) {
+        if (!piece.moveUpWithOnlyGridCheck(updateGridOnMove = false)) {
+          return true
+        }
+      }
+
+      piece.addToGrid()
+    }
     false
   }
 }
