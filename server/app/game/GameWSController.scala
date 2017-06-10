@@ -54,23 +54,10 @@ class GameWSController @Inject()(sessions: SessionManager, users: UserManager, r
         self ! PoisonPill
     }
 
-    def handleAction(action: String)(implicit id: Long): Unit = {
-      gameManager.getGame match {
-        case Some(game) =>
-          action match {
-            case "start" => game.setReady
-            case "left" => game.movePiece(Actions.Left)
-            case "right" => game.movePiece(Actions.Right)
-            case "rotate" => game.movePiece(Actions.Rotate)
-            case "down" => game.movePiece(Actions.Down)
-            case "fall" => game.movePiece(Actions.Fall)
-            case _ =>
-              logger.warn(s"Unknown action received: $action")
-              self ! PoisonPill
-          }
-        case None =>
-          out ! Json.obj(GameAPIKeys.error -> "There is no opponent yet!").toString()
-      }
+    def handleAction(action: String)(implicit id: Long): Unit = action match {
+      case Actions.Leave.name => gameManager.handleLeave
+      case Actions.Ready.name => gameManager.handleReady(out)
+      case _ => gameManager.handleGameAction(action, out)
     }
   }
 }

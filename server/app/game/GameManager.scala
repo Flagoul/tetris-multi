@@ -1,75 +1,175 @@
 package game
 
+import akka.actor.{ActorRef, PoisonPill}
 import managers.ResultManager
 import models.Result
+import play.api.Logger.logger
 import play.api.libs.json.Json
-import shared.GameAPIKeys
+import shared.{Actions, GameAPIKeys}
 
 import scala.collection.mutable
 
 case class GameManager(results: ResultManager) {
-  private var waitingPlayers: mutable.LinkedHashMap[Long, Player] = mutable.LinkedHashMap()
+  private var players: Map[Long, Player] = Map()
+
+  // The queue as a LinkedHashSet: allows FIFO like a queue, and allows easy element removal
+  private var waitingPlayers: mutable.LinkedHashSet[Long] = mutable.LinkedHashSet()
+  private var lobbies: Map[Long, Lobby] = Map()
   private var games: Map[Long, Game] = Map()
-
-  def isPlayerWaiting(implicit id: Long): Boolean = waitingPlayers.contains(id)
-
-  def removeWaitingPlayer(implicit id: Long): Unit = waitingPlayers -= id
-
-  def isPlayerInGame(implicit id: Long): Boolean = games.contains(id)
-
-  def putBackPlayerInGame(player: Player)(implicit id: Long): Unit = {
-    val game = games(id)
-
-    if (game.everyoneReady()) {
-      game.putBackPlayerInGame(player.out)
-    }
-    else {
-      // FIXME make the player lose but use a timeout as well, not only check here at reconnection
-      game.lose
-      joinGame(player)
-    }
-  }
 
   def joinGame(player: Player)(implicit id: Long): Unit = this.synchronized {
     if (isPlayerInGame) {
-      println("putting back player in game")
-      putBackPlayerInGame(player)
+      println(s"Putting back $id in game")
+      games(id).putBackPlayerInGame(player.out)
       return
     }
 
-    if (isPlayerWaiting) {
-      println("Removing player and putting back in waiting list")
-      removeWaitingPlayer
-    }
+    if (isPlayerInLobby) makePlayerLose
+    else if (isPlayerWaiting) removeWaitingPlayer
 
-    if (waitingPlayers.isEmpty) {
-      waitingPlayers += (id -> player)
-      println("waiting")
-    }
-    else {
-      val firstInMap = waitingPlayers.keySet.iterator.next
-      val opponent = waitingPlayers(firstInMap)
-      val opponentId = opponent.user.id.get
+    players += (id -> player)
 
-      waitingPlayers -= opponentId
+    if (waitingPlayers.isEmpty) addPlayerToQueue
+    else matchWithOpponent
 
-      val game = new Game(player, opponent, this)
-
-      games += (id -> game)
-      games += (opponentId -> game)
-
-      println("playing")
-      player.out ! Json.obj(GameAPIKeys.opponentUsername -> opponent.user.username).toString()
-      opponent.out ! Json.obj(GameAPIKeys.opponentUsername -> player.user.username).toString()
-    }
+    displayPlayers()
   }
 
-  def getGame(implicit id: Long): Option[Game] = games.get(id)
+  private def addPlayerToQueue(implicit id: Long): Unit = {
+    waitingPlayers += id
+    println(s"Putting player $id in waiting list")
+  }
 
-  def endGame(result: Result): Unit = {
+  private def matchWithOpponent(implicit id: Long): Unit = {
+    println("creating lobby")
+
+    val opponentId = waitingPlayers.iterator.next
+    waitingPlayers -= opponentId
+
+    val p1 = players(id)
+    val p2 = players(opponentId)
+
+    val lobby = Lobby(p1, p2)
+    lobbies += (id -> lobby)
+    lobbies += (opponentId -> lobby)
+
+    p1.out ! Json.obj(GameAPIKeys.opponentUsername -> p2.user.username).toString()
+    p2.out ! Json.obj(GameAPIKeys.opponentUsername -> p1.user.username).toString()
+
+    lobby.open()
+  }
+
+  private def deleteLobby(lobby: Lobby): Unit = {
+    val p1 = lobby.player1
+    val p2 = lobby.player2
+
+    lobbies -= p1.user.id.get
+    lobbies -= p2.user.id.get
+
+    lobby.close()
+  }
+
+  private def createGame(p1: Player, p2: Player): Game = {
+    val game = new Game(p1, p2, this)
+    games += (p1.user.id.get -> game)
+    games += (p2.user.id.get -> game)
+    game
+  }
+
+  private def makePlayerLose(implicit id: Long): Unit = {
+    println(s"$id loses because he left lobby")
+    val lobby = lobbies(id)
+    val p1 = lobby.player1
+    val p2 = lobby.player2
+
+    new Game(p1, p2, this).lose
+
+    deleteLobby(lobby)
+  }
+
+  private def isPlayerWaiting(implicit id: Long): Boolean = waitingPlayers.contains(id)
+  private def isPlayerInGame(implicit id: Long): Boolean = games.contains(id)
+  private def isPlayerInLobby(implicit id: Long): Boolean = lobbies.contains(id)
+
+  private def removeWaitingPlayer(implicit id: Long): Unit = this.synchronized {
+    println(s"$id was removed from waiting list")
+    waitingPlayers -= id
+    players(id).out ! PoisonPill
+    players -= id
+
+    displayPlayers()
+  }
+
+  def handleLeave(implicit id: Long): Unit = {
+    println(s"$id left before playing")
+    if (isPlayerWaiting) removeWaitingPlayer(id)
+    else if (isPlayerInLobby) makePlayerLose
+  }
+
+  def handleReady(out: ActorRef)(implicit id: Long): Unit = lobbies.get(id) match {
+    case Some(lobby) =>
+      lobby.setReady(id)
+
+      val player = players(id)
+      val opponent = if (player == lobby.player1) lobby.player2 else lobby.player1
+
+      Network.broadcast(player.out, opponent.out, Json.obj(GameAPIKeys.ready -> true))
+
+      if (lobby.everyoneReady()) {
+        println(s"everyone is ready, creating and starting game with ${lobby.player1.user.id.get} and ${lobby.player2.user.id.get}")
+
+        val game = createGame(lobby.player1, lobby.player2)
+        deleteLobby(lobby)
+        game.start()
+      }
+    case None =>
+      logger.warn(s"Ready received when player not in lobby")
+      out ! PoisonPill
+  }
+
+  def handleGameAction(action: String, out: ActorRef)(implicit id: Long): Unit = games.get(id) match {
+    case Some(game) =>
+      action match {
+        case Actions.Left.name => game.movePiece(Actions.Left)
+        case Actions.Right.name => game.movePiece(Actions.Right)
+        case Actions.Rotate.name => game.movePiece(Actions.Rotate)
+        case Actions.Down.name => game.movePiece(Actions.Down)
+        case Actions.Fall.name => game.movePiece(Actions.Fall)
+        case _ =>
+          logger.warn(s"Unknown action received: $action")
+          out ! PoisonPill
+      }
+    case None => // ignore action
+  }
+
+  def endGame(result: Result): Unit = this.synchronized {
+    println("end of the game")
     games -= result.winnerId
     games -= result.loserId
 
+    players -= result.winnerId
+    players -= result.loserId
+
+    displayPlayers()
+
     results.create(result)
+  }
+
+  // TODO remove at the end
+  private def displayPlayers(): Unit = {
+    println(" players")
+    print(" ")
+    println(players)
+    println()
+
+    println(" waiting players")
+    print(" ")
+    println(waitingPlayers)
+    println()
+
+    println(" lobbies")
+    print(" ")
+    println(lobbies)
+    println()
   }
 }
