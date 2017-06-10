@@ -59,7 +59,10 @@ class Game {
     readyButton.onclick = (_: MouseEvent) => sendAction(Ready)
 
     ws.onmessage = (e: MessageEvent) => handleMessage(JValue.fromString(e.data.toString))
-    ws.onclose = (_: CloseEvent) => error.innerHTML = "You have already the game open elsewhere. Please close this tab."
+    ws.onclose = (_: CloseEvent) => {
+      error.innerHTML = "You have already the game open elsewhere. Please close this tab."
+      suppressLeaveWarning()
+    }
 
     dom.window.onkeydown = (e: KeyboardEvent) => handleKeyDown(e.keyCode)
     dom.window.onunload = (_: Event) => sendAction(Leave)
