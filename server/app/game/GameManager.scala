@@ -12,7 +12,7 @@ import scala.collection.mutable
 case class GameManager(results: ResultManager) {
   private var players: Map[Long, Player] = Map()
   private var waitingPlayers: mutable.LinkedHashMap[Long, Player] = mutable.LinkedHashMap()
-  private var lobbys: Map[Long, Lobby] = Map()
+  private var lobbies: Map[Long, Lobby] = Map()
   private var games: Map[Long, Game] = Map()
 
   def joinGame(player: Player)(implicit id: Long): Unit = this.synchronized {
@@ -52,8 +52,8 @@ case class GameManager(results: ResultManager) {
 
   private def createLobby(p1: Player, p2: Player): Lobby = {
     val lobby = Lobby(p1, p2)
-    lobbys += (p1.user.id.get -> lobby)
-    lobbys += (p2.user.id.get -> lobby)
+    lobbies += (p1.user.id.get -> lobby)
+    lobbies += (p2.user.id.get -> lobby)
 
     p1.out ! Json.obj(GameAPIKeys.opponentUsername -> p2.user.username).toString()
     p2.out ! Json.obj(GameAPIKeys.opponentUsername -> p1.user.username).toString()
@@ -67,8 +67,8 @@ case class GameManager(results: ResultManager) {
     val p1 = lobby.player1
     val p2 = lobby.player2
 
-    lobbys -= p1.user.id.get
-    lobbys -= p2.user.id.get
+    lobbies -= p1.user.id.get
+    lobbies -= p2.user.id.get
 
     lobby.close()
   }
@@ -82,7 +82,7 @@ case class GameManager(results: ResultManager) {
 
   private def makePlayerLose(implicit id: Long): Unit = {
     println(s"$id loses because he left lobby")
-    val lobby = lobbys(id)
+    val lobby = lobbies(id)
     val p1 = lobby.player1
     val p2 = lobby.player2
 
@@ -93,11 +93,12 @@ case class GameManager(results: ResultManager) {
 
   private def isPlayerWaiting(implicit id: Long): Boolean = waitingPlayers.contains(id)
   private def isPlayerInGame(implicit id: Long): Boolean = games.contains(id)
-  private def isPlayerInLobby(implicit id: Long): Boolean = lobbys.contains(id)
+  private def isPlayerInLobby(implicit id: Long): Boolean = lobbies.contains(id)
 
   private def removeWaitingPlayer(implicit id: Long): Unit = this.synchronized {
     println(s"$id was removed from waiting list")
     waitingPlayers -= id
+    players(id).out ! PoisonPill
     players -= id
 
     displayPlayers()
@@ -109,7 +110,7 @@ case class GameManager(results: ResultManager) {
     else if (isPlayerInLobby) makePlayerLose
   }
 
-  def handleReady(out: ActorRef)(implicit id: Long): Unit = lobbys.get(id) match {
+  def handleReady(out: ActorRef)(implicit id: Long): Unit = lobbies.get(id) match {
     case Some(lobby) =>
       lobby.setReady(id)
 
@@ -142,8 +143,7 @@ case class GameManager(results: ResultManager) {
           logger.warn(s"Unknown action received: $action")
           out ! PoisonPill
       }
-    case None =>
-      out ! Json.obj(GameAPIKeys.error -> "There is no opponent yet!").toString()
+    case None => // ignore action
   }
 
   def endGame(result: Result): Unit = this.synchronized {
@@ -171,9 +171,9 @@ case class GameManager(results: ResultManager) {
     println(waitingPlayers)
     println()
 
-    println(" lobbys")
+    println(" lobbies")
     print(" ")
-    println(lobbys)
+    println(lobbies)
     println()
   }
 }

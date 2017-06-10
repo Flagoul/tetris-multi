@@ -59,13 +59,10 @@ class Game {
     readyButton.onclick = (_: MouseEvent) => sendAction(Ready)
 
     ws.onmessage = (e: MessageEvent) => handleMessage(JValue.fromString(e.data.toString))
+    ws.onclose = (_: CloseEvent) => error.innerHTML = "You have already the game open elsewhere. Please close this tab."
 
-    dom.window.onkeydown = (e: dom.KeyboardEvent) => handleKeyDown(e.keyCode)
-
-    dom.window.onunload = (_: dom.Event) => {
-      println("left play page")
-      sendAction(Leave)
-    }
+    dom.window.onkeydown = (e: KeyboardEvent) => handleKeyDown(e.keyCode)
+    dom.window.onunload = (_: Event) => sendAction(Leave)
   }
 
   private def activateLeaveWarning(): Unit = {
@@ -169,6 +166,7 @@ class Game {
     readyButton.style.display = "none"
     endButtons.style.display = "block"
     suppressLeaveWarning()
+    ws.onclose = null
 
     if (wonExists(data)) {
       val winnerGB = if (getWonValue(data)) playerGB else opponentGB
