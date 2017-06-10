@@ -11,7 +11,9 @@ import scala.collection.mutable
 
 case class GameManager(results: ResultManager) {
   private var players: Map[Long, Player] = Map()
-  private var waitingPlayers: mutable.LinkedHashMap[Long, Player] = mutable.LinkedHashMap()
+
+  // The queue as a LinkedHashSet: allows FIFO like a queue, and allows easy element removal
+  private var waitingPlayers: mutable.LinkedHashSet[Long] = mutable.LinkedHashSet()
   private var lobbies: Map[Long, Lobby] = Map()
   private var games: Map[Long, Game] = Map()
 
@@ -27,40 +29,34 @@ case class GameManager(results: ResultManager) {
 
     players += (id -> player)
 
-    if (waitingPlayers.isEmpty) addPlayerToQueue(player)
-    else matchWithOpponent(player)
+    if (waitingPlayers.isEmpty) addPlayerToQueue
+    else matchWithOpponent
 
     displayPlayers()
   }
 
-  private def addPlayerToQueue(player: Player): Unit = {
-    waitingPlayers += (player.user.id.get -> player)
-    println(s"Putting player ${player.user.id.get} in waiting list")
+  private def addPlayerToQueue(implicit id: Long): Unit = {
+    waitingPlayers += id
+    println(s"Putting player $id in waiting list")
   }
 
-  private def matchWithOpponent(player: Player): Unit = {
+  private def matchWithOpponent(implicit id: Long): Unit = {
     println("creating lobby")
 
-    val firstInMap = waitingPlayers.keySet.iterator.next
-    val opponent = waitingPlayers(firstInMap)
-    val opponentId = opponent.user.id.get
-
+    val opponentId = waitingPlayers.iterator.next
     waitingPlayers -= opponentId
 
-    createLobby(player, opponent)
-  }
+    val p1 = players(id)
+    val p2 = players(opponentId)
 
-  private def createLobby(p1: Player, p2: Player): Lobby = {
     val lobby = Lobby(p1, p2)
-    lobbies += (p1.user.id.get -> lobby)
-    lobbies += (p2.user.id.get -> lobby)
+    lobbies += (id -> lobby)
+    lobbies += (opponentId -> lobby)
 
     p1.out ! Json.obj(GameAPIKeys.opponentUsername -> p2.user.username).toString()
     p2.out ! Json.obj(GameAPIKeys.opponentUsername -> p1.user.username).toString()
 
     lobby.open()
-
-    lobby
   }
 
   private def deleteLobby(lobby: Lobby): Unit = {
