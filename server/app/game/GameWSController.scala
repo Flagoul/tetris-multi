@@ -54,13 +54,10 @@ class GameWSController @Inject()(sessions: SessionManager, users: UserManager, r
         self ! PoisonPill
     }
 
-    def handleAction(action: String)(implicit id: Long): Unit = {
-      if (action == Actions.Leave.name) {
-        gameManager.handleLeave
-        return
-      }
-
-      gameManager.handleGameAction(action, out)
+    def handleAction(action: String)(implicit id: Long): Unit = action match {
+      case Actions.Leave.name => gameManager.handleLeave
+      case Actions.Ready.name => gameManager.handleReady(out)
+      case _ => gameManager.handleGameAction(action, out)
     }
   }
 }

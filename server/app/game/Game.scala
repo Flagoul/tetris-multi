@@ -18,7 +18,7 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
   private val player2: PlayerWithState = PlayerWithState(p2)
 
   private var gameFinished: Boolean = false
-  private var gameBeganAt: Long = _
+  private var gameBeganAt: Long = System.currentTimeMillis()
 
   private val players: Map[Long, PlayerWithState] = Map(
     player1.user.id.get -> player1,
@@ -29,20 +29,7 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
   private val system = akka.actor.ActorSystem("system")
   import system.dispatcher
 
-  def setReady(implicit id: Long): Unit = {
-    val player = players(id)
-    player.state.ready = true
-    println(id + " is ready")
-    broadcast(player, Json.obj(GameAPIKeys.ready -> true))
-
-    if (opponent(player).state.ready) {
-      initGame()
-    }
-  }
-
-  def everyoneReady(): Boolean = player1.state.ready && player2.state.ready
-
-  private def initGame(): Unit = {
+  def start(): Unit = {
     player1.state.curPiece.addToGrid()
     player2.state.curPiece.addToGrid()
 
@@ -59,10 +46,6 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
   }
 
   def movePiece(action: Action)(implicit id: Long): Unit = this.synchronized {
-    if (!everyoneReady()) {
-      return
-    }
-
     val player = players(id)
     val gs = player.state
 
@@ -207,7 +190,7 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
       winner.out ! PoisonPill
 
       // If the player loses by leaving the game when in the lobby, the game time should be 0.
-      val timeSpent = if (everyoneReady()) (System.currentTimeMillis() - gameBeganAt) / 1000 else 0
+      val timeSpent = (System.currentTimeMillis() - gameBeganAt) / 1000
 
       gameManager.endGame(Result(
         None,

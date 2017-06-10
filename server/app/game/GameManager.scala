@@ -12,60 +12,88 @@ import scala.collection.mutable
 case class GameManager(results: ResultManager) {
   private var players: Map[Long, Player] = Map()
   private var waitingPlayers: mutable.LinkedHashMap[Long, Player] = mutable.LinkedHashMap()
+  private var lobbys: Map[Long, Lobby] = Map()
   private var games: Map[Long, Game] = Map()
 
   def joinGame(player: Player)(implicit id: Long): Unit = this.synchronized {
-    if (isPlayerPlaying) {
-      println(s"Putting back $id in game he was playing")
+    if (isPlayerInGame) {
+      println(s"Putting back $id in game")
       games(id).putBackPlayerInGame(player.out)
       return
     }
 
-    // FIXME remove after timer
-    if (isPlayerInLobby) {
-      makePlayerLose(player)
-    }
-
-    if (isPlayerWaiting) {
-      removeWaitingPlayer
-    }
+    if (isPlayerInLobby) makePlayerLose
+    else if (isPlayerWaiting) removeWaitingPlayer
 
     players += (id -> player)
 
-    if (waitingPlayers.isEmpty) {
-      waitingPlayers += (id -> player)
-      println(s"Putting player $id in waiting list")
-    }
-    else {
-      val firstInMap = waitingPlayers.keySet.iterator.next
-      val opponent = waitingPlayers(firstInMap)
-      val opponentId = opponent.user.id.get
-
-      waitingPlayers -= opponentId
-
-      val game = new Game(player, opponent, this)
-
-      games += (id -> game)
-      games += (opponentId -> game)
-
-      println(s"Game was created with $id and $opponentId")
-      player.out ! Json.obj(GameAPIKeys.opponentUsername -> opponent.user.username).toString()
-      opponent.out ! Json.obj(GameAPIKeys.opponentUsername -> player.user.username).toString()
-    }
+    if (waitingPlayers.isEmpty) addPlayerToQueue(player)
+    else matchWithOpponent(player)
 
     displayPlayers()
   }
 
-  private def makePlayerLose(player: Player)(implicit id: Long): Unit = {
-    println(s"$id loses because he left")
-    val game = games(id)
-    game.lose
+  private def addPlayerToQueue(player: Player): Unit = {
+    waitingPlayers += (player.user.id.get -> player)
+    println(s"Putting player ${player.user.id.get} in waiting list")
+  }
+
+  private def matchWithOpponent(player: Player): Unit = {
+    println("creating lobby")
+
+    val firstInMap = waitingPlayers.keySet.iterator.next
+    val opponent = waitingPlayers(firstInMap)
+    val opponentId = opponent.user.id.get
+
+    waitingPlayers -= opponentId
+
+    createLobby(player, opponent)
+  }
+
+  private def createLobby(p1: Player, p2: Player): Lobby = {
+    val lobby = Lobby(p1, p2)
+    lobbys += (p1.user.id.get -> lobby)
+    lobbys += (p2.user.id.get -> lobby)
+
+    p1.out ! Json.obj(GameAPIKeys.opponentUsername -> p2.user.username).toString()
+    p2.out ! Json.obj(GameAPIKeys.opponentUsername -> p1.user.username).toString()
+
+    lobby.open()
+
+    lobby
+  }
+
+  private def deleteLobby(lobby: Lobby): Unit = {
+    val p1 = lobby.player1
+    val p2 = lobby.player2
+
+    lobbys -= p1.user.id.get
+    lobbys -= p2.user.id.get
+
+    lobby.close()
+  }
+
+  private def createGame(p1: Player, p2: Player): Game = {
+    val game = new Game(p1, p2, this)
+    games += (p1.user.id.get -> game)
+    games += (p2.user.id.get -> game)
+    game
+  }
+
+  private def makePlayerLose(implicit id: Long): Unit = {
+    println(s"$id loses because he left lobby")
+    val lobby = lobbys(id)
+    val p1 = lobby.player1
+    val p2 = lobby.player2
+
+    new Game(p1, p2, this).lose
+
+    deleteLobby(lobby)
   }
 
   private def isPlayerWaiting(implicit id: Long): Boolean = waitingPlayers.contains(id)
   private def isPlayerInGame(implicit id: Long): Boolean = games.contains(id)
-  private def isPlayerInLobby(implicit id: Long): Boolean = isPlayerInGame && !games(id).everyoneReady()
-  private def isPlayerPlaying(implicit id: Long): Boolean = isPlayerInGame && games(id).everyoneReady()
+  private def isPlayerInLobby(implicit id: Long): Boolean = lobbys.contains(id)
 
   private def removeWaitingPlayer(implicit id: Long): Unit = this.synchronized {
     println(s"$id was removed from waiting list")
@@ -77,14 +105,34 @@ case class GameManager(results: ResultManager) {
 
   def handleLeave(implicit id: Long): Unit = {
     println(s"$id left before playing")
-    if (isPlayerWaiting) removeWaitingPlayer
-    else if (isPlayerInLobby) makePlayerLose(players(id))
+    if (isPlayerWaiting) removeWaitingPlayer(id)
+    else if (isPlayerInLobby) makePlayerLose
+  }
+
+  def handleReady(out: ActorRef)(implicit id: Long): Unit = lobbys.get(id) match {
+    case Some(lobby) =>
+      lobby.setReady(id)
+
+      val player = players(id)
+      val opponent = if (player == lobby.player1) lobby.player2 else lobby.player1
+
+      Network.broadcast(player.out, opponent.out, Json.obj(GameAPIKeys.ready -> true))
+
+      if (lobby.everyoneReady()) {
+        println(s"everyone is ready, creating and starting game with ${lobby.player1.user.id.get} and ${lobby.player2.user.id.get}")
+
+        val game = createGame(lobby.player1, lobby.player2)
+        deleteLobby(lobby)
+        game.start()
+      }
+    case None =>
+      logger.warn(s"Ready received when player not in lobby")
+      out ! PoisonPill
   }
 
   def handleGameAction(action: String, out: ActorRef)(implicit id: Long): Unit = games.get(id) match {
     case Some(game) =>
       action match {
-        case Actions.Ready.name => game.setReady
         case Actions.Left.name => game.movePiece(Actions.Left)
         case Actions.Right.name => game.movePiece(Actions.Right)
         case Actions.Rotate.name => game.movePiece(Actions.Rotate)
@@ -121,5 +169,11 @@ case class GameManager(results: ResultManager) {
     println(" waiting players")
     print(" ")
     println(waitingPlayers)
+    println()
+
+    println(" lobbys")
+    print(" ")
+    println(lobbys)
+    println()
   }
 }
