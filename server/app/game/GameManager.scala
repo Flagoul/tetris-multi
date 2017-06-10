@@ -3,46 +3,67 @@ package game
 import akka.actor.{ActorRef, PoisonPill}
 import managers.ResultManager
 import models.Result
-import play.api.Logger.logger
 import play.api.libs.json.Json
 import shared.{Actions, GameAPIKeys}
 
 import scala.collection.mutable
 
+/**
+  * Matches players together and spawns / handles / removes lobbies and games.
+  *
+  * Also used to create results at the end of a game.
+  *
+  * @param results The ResultManager to use to create game results.
+  */
 case class GameManager(results: ResultManager) {
+  // The players that are either in a lobby or in a game
   private var players: Map[Long, Player] = Map()
 
   // The queue as a LinkedHashSet: allows FIFO like a queue, and allows easy element removal
   private var waitingPlayers: mutable.LinkedHashSet[Long] = mutable.LinkedHashSet()
+
+  // The existing lobbies
   private var lobbies: Map[Long, Lobby] = Map()
+
+  // The existing games
   private var games: Map[Long, Game] = Map()
 
+  /**
+    * Makes a player join a game.
+    *
+    * @param player The player to make
+    * @param id The id of the player.
+    */
   def joinGame(player: Player)(implicit id: Long): Unit = this.synchronized {
     if (isPlayerInGame) {
-      println(s"Putting back $id in game")
       games(id).putBackPlayerInGame(player.out)
       return
     }
 
     if (isPlayerInLobby) makePlayerLose
-    else if (isPlayerWaiting) removeWaitingPlayer
+    else if (isPlayerWaiting) removePlayerFromQueue
 
     players += (id -> player)
 
     if (waitingPlayers.isEmpty) addPlayerToQueue
     else matchWithOpponent
-
-    displayPlayers()
   }
 
+  /**
+    * Adds a player to the waiting queue.
+    *
+    * @param id The id of the player.
+    */
   private def addPlayerToQueue(implicit id: Long): Unit = {
     waitingPlayers += id
-    println(s"Putting player $id in waiting list")
   }
 
+  /**
+    * Matches the current player with the first opponent.
+    *
+    * @param id The id of the player.
+    */
   private def matchWithOpponent(implicit id: Long): Unit = {
-    println("creating lobby")
-
     val opponentId = waitingPlayers.iterator.next
     waitingPlayers -= opponentId
 
@@ -55,20 +76,28 @@ case class GameManager(results: ResultManager) {
 
     p1.out ! Json.obj(GameAPIKeys.opponentUsername -> p2.user.username).toString()
     p2.out ! Json.obj(GameAPIKeys.opponentUsername -> p1.user.username).toString()
-
-    lobby.open()
   }
 
-  private def deleteLobby(lobby: Lobby): Unit = {
+  /**
+    * Closes the specified lobby by removes it from the lobbies list.
+    *
+    * @param lobby The specified lobby.
+    */
+  private def closeLobby(lobby: Lobby): Unit = {
     val p1 = lobby.player1
     val p2 = lobby.player2
 
     lobbies -= p1.user.id.get
     lobbies -= p2.user.id.get
-
-    lobby.close()
   }
 
+  /**
+    * Creates and adds a new game to the game list using the specified players.
+    *
+    * @param p1 The first player.
+    * @param p2 The second player.
+    * @return The game created.
+    */
   private def createGame(p1: Player, p2: Player): Game = {
     val game = new Game(p1, p2, this)
     games += (p1.user.id.get -> game)
@@ -76,36 +105,48 @@ case class GameManager(results: ResultManager) {
     game
   }
 
+  /**
+    * Makes the player lose the game that would be launched after the lobby in which he currently is.
+    *
+    * @param id The id of the player.
+    */
   private def makePlayerLose(implicit id: Long): Unit = {
-    println(s"$id loses because he left lobby")
     val lobby = lobbies(id)
     val p1 = lobby.player1
     val p2 = lobby.player2
 
     new Game(p1, p2, this).lose
 
-    deleteLobby(lobby)
+    closeLobby(lobby)
   }
 
-  private def isPlayerWaiting(implicit id: Long): Boolean = waitingPlayers.contains(id)
-  private def isPlayerInGame(implicit id: Long): Boolean = games.contains(id)
-  private def isPlayerInLobby(implicit id: Long): Boolean = lobbies.contains(id)
-
-  private def removeWaitingPlayer(implicit id: Long): Unit = this.synchronized {
-    println(s"$id was removed from waiting list")
+  /**
+    *Removes the player from the waiting queue.
+    *
+    * @param id The id of the current player.
+    */
+  private def removePlayerFromQueue(implicit id: Long): Unit = this.synchronized {
     waitingPlayers -= id
     players(id).out ! PoisonPill
     players -= id
-
-    displayPlayers()
   }
 
+  /**
+    * Takes the appropriate action when the player leaves the lobby or the queue.
+    *
+    * @param id The id of the current player.
+    */
   def handleLeave(implicit id: Long): Unit = {
-    println(s"$id left before playing")
-    if (isPlayerWaiting) removeWaitingPlayer(id)
+    if (isPlayerWaiting) removePlayerFromQueue(id)
     else if (isPlayerInLobby) makePlayerLose
   }
 
+  /**
+    * Takes the appropriate action when a ready action is received.
+    *
+    * @param out The actor ref of the player.
+    * @param id The id of the player.
+    */
   def handleReady(out: ActorRef)(implicit id: Long): Unit = lobbies.get(id) match {
     case Some(lobby) =>
       lobby.setReady(id)
@@ -116,17 +157,21 @@ case class GameManager(results: ResultManager) {
       Network.broadcast(player.out, opponent.out, Json.obj(GameAPIKeys.ready -> true))
 
       if (lobby.everyoneReady()) {
-        println(s"everyone is ready, creating and starting game with ${lobby.player1.user.id.get} and ${lobby.player2.user.id.get}")
-
         val game = createGame(lobby.player1, lobby.player2)
-        deleteLobby(lobby)
+        closeLobby(lobby)
         game.start()
       }
     case None =>
-      logger.warn(s"Ready received when player not in lobby")
       out ! PoisonPill
   }
 
+  /**
+    * Takes the appropriate action according to the message received.
+    *
+    * @param action The action to take.
+    * @param out The actor ref of the current player.
+    * @param id The id of the player.
+    */
   def handleGameAction(action: String, out: ActorRef)(implicit id: Long): Unit = games.get(id) match {
     case Some(game) =>
       action match {
@@ -136,40 +181,30 @@ case class GameManager(results: ResultManager) {
         case Actions.Down.name => game.movePiece(Actions.Down)
         case Actions.Fall.name => game.movePiece(Actions.Fall)
         case _ =>
-          logger.warn(s"Unknown action received: $action")
           out ! PoisonPill
       }
     case None => // ignore action
   }
 
+  /**
+    * Removes the game using the id of the players and save the result of the game.
+    *
+    * @param result The result to save.
+    */
   def endGame(result: Result): Unit = this.synchronized {
-    println("end of the game")
     games -= result.winnerId
     games -= result.loserId
 
     players -= result.winnerId
     players -= result.loserId
 
-    displayPlayers()
-
     results.create(result)
   }
 
-  // TODO remove at the end
-  private def displayPlayers(): Unit = {
-    println(" players")
-    print(" ")
-    println(players)
-    println()
-
-    println(" waiting players")
-    print(" ")
-    println(waitingPlayers)
-    println()
-
-    println(" lobbies")
-    print(" ")
-    println(lobbies)
-    println()
-  }
+  /**
+    * Helpers to know at which state of the play process a player is, using his id.
+    */
+  private def isPlayerWaiting(implicit id: Long): Boolean = waitingPlayers.contains(id)
+  private def isPlayerInGame(implicit id: Long): Boolean = games.contains(id)
+  private def isPlayerInLobby(implicit id: Long): Boolean = lobbies.contains(id)
 }

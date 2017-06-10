@@ -44,18 +44,4 @@ case class Lobby(player1: Player, player2: Player) {
     player.isReady = true
     println(id + " is ready")
   }
-
-  /**
-    * Opens the lobby and starts the timeout schedulers.
-    */
-  def open(): Unit = {
-    // TODO
-  }
-
-  /**
-    * Closes the lobby and stops the timeout schedulers.
-    */
-  def close(): Unit = {
-    // TODO
-  }
 }
