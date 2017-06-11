@@ -68,11 +68,17 @@ class Game {
     dom.window.onunload = (_: Event) => sendAction(Leave)
   }
 
+  /**
+    * Activates the warning on page leave ("Are you sure to quit ?").
+    */
   private def activateLeaveWarning(): Unit = {
     // Trick to trigger the "do you really want to leave" prompt. If some text is returned, the prompt will appear.
     dom.window.onbeforeunload = (_: dom.BeforeUnloadEvent) => {""}
   }
 
+  /**
+    * Suppress the leave warning.
+    */
   private def suppressLeaveWarning(): Unit = {
     dom.window.onbeforeunload = null
   }

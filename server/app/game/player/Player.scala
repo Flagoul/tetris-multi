@@ -10,6 +10,11 @@ import models.User
   * @param out The actor reference to use when sending messages to the player.
   */
 case class Player(user: User, var out: ActorRef) {
+  /**
+    * Changes the actor reference used to send message to the player and close old websocket.
+    *
+    * @param newRef The new actor reference.
+    */
   def changeActorRef(newRef: ActorRef): Unit = {
     out ! PoisonPill
     out = newRef

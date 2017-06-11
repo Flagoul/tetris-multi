@@ -2,6 +2,7 @@ package game.pieces
 
 import shared.GameRules.{nNextPieceCols, nNextPieceRows}
 import shared.Pieces.Piece
+import shared.Types.Grid
 
 /**
   * Represents a piece in the next piece grid.

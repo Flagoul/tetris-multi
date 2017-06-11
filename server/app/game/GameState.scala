@@ -3,6 +3,7 @@ package game
 import game.pieces.{GamePiece, NextPiece}
 import shared.GameRules._
 import shared.Pieces.randomPiece
+import shared.Types.Grid
 
 /**
   * Represents the state during the game for a given player.

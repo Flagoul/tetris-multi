@@ -1,7 +1,7 @@
 package game.utils
 
 import game.GameState
-import game.player.PlayerWithState
+import shared.GameRules
 import shared.GameRules.nGameCols
 import shared.Types.Grid
 
@@ -55,30 +55,5 @@ object GridUtils {
       piece.addToGrid()
     }
     false
-  }
-
-  /**
-    * Sends the completed lines specified to the opponent grid.
-    *
-    * The lines sent are the ones that the player completed in the state they were before completion.
-    *
-    * @param removed The lines removed, with their row indices.
-    * @param state The state containing the positions of the current piece.
-    * @param oppState The opponent's state containing the grid to update.
-    * @return Whether the opponent loses when his grid is updated.
-    */
-  def sendLinesToOpponent(removed: Array[(Array[Boolean], Int)], state: GameState, oppState: GameState): Boolean = {
-    val linesBeforeCompleted: Grid = removed.map(p => {
-      val row: Array[Boolean] = p._1
-      val i = p._2
-      row.indices.map(col => !state.curPiece.getPositions.contains((i, col))).toArray
-    })
-
-    val toSend = linesBeforeCompleted.length match {
-      case 1 | 2 | 3 => linesBeforeCompleted.take(linesBeforeCompleted.length - 1)
-      case _ => linesBeforeCompleted
-    }
-
-    GridUtils.pushLinesToGrid(toSend, oppState)
   }
 }
