@@ -3,7 +3,7 @@ package tetris.game
 import json._
 import org.scalajs.dom
 import org.scalajs.dom.WebSocket
-import org.scalajs.dom.raw.{HTMLButtonElement, HTMLDivElement, MessageEvent, MouseEvent}
+import org.scalajs.dom.raw._
 import shared.Actions._
 import shared.GameAPIKeys
 import shared.GameRules._
@@ -56,11 +56,25 @@ class Game {
     opponentGB.drawGame()
     opponentGB.drawNextPieceGrid()
 
-    readyButton.onclick = (_: MouseEvent) => sendAction(Start)
-
-    dom.window.onkeydown = (e: dom.KeyboardEvent) => handleKeyDown(e.keyCode)
+    readyButton.onclick = (_: MouseEvent) => sendAction(Ready)
 
     ws.onmessage = (e: MessageEvent) => handleMessage(JValue.fromString(e.data.toString))
+    ws.onclose = (_: CloseEvent) => {
+      error.innerHTML = "You have already the game open elsewhere. Please close this tab."
+      suppressLeaveWarning()
+    }
+
+    dom.window.onkeydown = (e: KeyboardEvent) => handleKeyDown(e.keyCode)
+    dom.window.onunload = (_: Event) => sendAction(Leave)
+  }
+
+  private def activateLeaveWarning(): Unit = {
+    // Trick to trigger the "do you really want to leave" prompt. If some text is returned, the prompt will appear.
+    dom.window.onbeforeunload = (_: dom.BeforeUnloadEvent) => {""}
+  }
+
+  private def suppressLeaveWarning(): Unit = {
+    dom.window.onbeforeunload = null
   }
 
   /**
@@ -120,6 +134,8 @@ class Game {
 
     readyButton.style.display = "block"
     playerGB.setLayerText("")
+
+    activateLeaveWarning()
   }
 
   /**
@@ -152,6 +168,8 @@ class Game {
     opponentGB.showLayer()
     readyButton.style.display = "none"
     endButtons.style.display = "block"
+    suppressLeaveWarning()
+    ws.onclose = null
 
     if (wonExists(data)) {
       val winnerGB = if (getWonValue(data)) playerGB else opponentGB

@@ -2,6 +2,9 @@ import org.scalatest.{BeforeAndAfter, FunSuite, PrivateMethodTester}
 import game.{Game, GameState, Player}
 import shared.GameRules.{nGameCols, nGameRows}
 
+/**
+  * Tests some features of the Game.
+  */
 class TestGame extends FunSuite with BeforeAndAfter with PrivateMethodTester {
   val game = new Game(Player(null, null), Player(null, null), null)
   val state = new GameState()
