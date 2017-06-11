@@ -1,6 +1,7 @@
-package game
+package game.player
 
-import akka.actor.{ActorRef}
+import akka.actor.ActorRef
+import game.GameState
 import models.User
 
 /**

@@ -7,7 +7,7 @@ import org.scalajs.dom.raw._
 import shared.Actions._
 import shared.GameAPIKeys
 import shared.GameRules._
-import shared.Types.Position
+import shared.Types.{Grid, Position}
 
 import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 
@@ -275,7 +275,7 @@ class Game {
   private def getPiecePositionsValue(data: JValue): List[Position] = {
     data(GameAPIKeys.piecePositions).value.asInstanceOf[Seq[Seq[Int]]].map(l => (l.head, l.tail.head)).toList
   }
-  private def getGrid(data: JValue, key: String): Array[Array[Boolean]] = {
+  private def getGrid(data: JValue, key: String): Grid = {
     data(key).value.asInstanceOf[Seq[Seq[Boolean]]].map(_.toArray).toArray
   }
 }

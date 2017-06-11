@@ -1,6 +1,8 @@
 package game
 
 import akka.actor.{ActorRef, PoisonPill}
+import game.player.Player
+import game.utils.Network
 import managers.ResultManager
 import models.Result
 import play.api.libs.json.Json

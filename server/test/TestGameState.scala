@@ -7,7 +7,7 @@ import shared.GameRules.{nGameCols, nGameRows}
   */
 class TestGameState extends FunSuite with BeforeAndAfter {
   val state: GameState = new GameState()
-  var values: Array[Array[Boolean]] = _
+  var values: Grid = _
 
   before {
     values = Array.ofDim[Boolean](nGameRows, nGameCols)

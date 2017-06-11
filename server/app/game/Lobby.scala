@@ -1,5 +1,7 @@
 package game
 
+import game.player.Player
+
 /**
   * A lobby where players are put when matched together before they begin to play.
   *

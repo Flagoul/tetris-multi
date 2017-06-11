@@ -1,5 +1,8 @@
 package shared
 
+/**
+  * Actions that the player can send to the server when playing.
+  */
 object Actions {
   case class Action(name: String)
   object Ready extends Action("start")

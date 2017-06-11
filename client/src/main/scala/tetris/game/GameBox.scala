@@ -3,7 +3,7 @@ package tetris.game
 import org.scalajs.dom
 import org.scalajs.dom.html.Canvas
 import org.scalajs.dom.raw.{Element, HTMLDivElement, HTMLParagraphElement}
-import shared.Types.Position
+import shared.Types.{Grid, Position}
 
 /**
   * Represents a game box and its content.
@@ -44,8 +44,8 @@ class GameBox(id: String, nGameRows: Int, nGameCols: Int, nNextPieceRows: Int, n
   private val pointsDiv: HTMLDivElement = box.querySelector(".points").asInstanceOf[HTMLDivElement]
 
   // The game and next piece grids as well as the current piece positions
-  private var gameGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
-  private var nextPieceGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nNextPieceRows, nNextPieceCols)
+  private var gameGrid: Grid = Array.ofDim[Boolean](nGameRows, nGameCols)
+  private var nextPieceGrid: Grid = Array.ofDim[Boolean](nNextPieceRows, nNextPieceCols)
   private var piecePositions: List[Position] = List()
 
   /**
@@ -84,7 +84,7 @@ class GameBox(id: String, nGameRows: Int, nGameCols: Int, nNextPieceRows: Int, n
     *
     * @param grid The new grid.
     */
-  def updateGameGrid(grid: Array[Array[Boolean]]): Unit = {
+  def updateGameGrid(grid: Grid): Unit = {
     gameGrid = grid
     drawGame()
   }
@@ -94,7 +94,7 @@ class GameBox(id: String, nGameRows: Int, nGameCols: Int, nNextPieceRows: Int, n
     *
     * @param grid The new grid.
     */
-  def updateNextPieceGrid(grid: Array[Array[Boolean]]): Unit = {
+  def updateNextPieceGrid(grid: Grid): Unit = {
     nextPieceGrid = grid
     drawNextPieceGrid()
   }

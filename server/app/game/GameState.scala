@@ -1,7 +1,7 @@
 package game
 
+import game.pieces.{GamePiece, NextPiece}
 import shared.GameRules._
-import game.PiecesWithPosition._
 import shared.Pieces.randomPiece
 
 /**
@@ -12,10 +12,10 @@ class GameState() {
   var gameSpeed: Long = 1000
 
   // The game grid that contains pieces falling.
-  val gameGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
+  val gameGrid: Grid = Array.ofDim[Boolean](nGameRows, nGameCols)
 
   // The grid containing the next piece that will fall.
-  val nextPieceGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
+  val nextPieceGrid: Grid = Array.ofDim[Boolean](nGameRows, nGameCols)
 
   // The current and next pieces falling.
   var curPiece: GamePiece = new GamePiece(randomPiece(), gameGrid)
@@ -30,7 +30,7 @@ class GameState() {
     *
     * @param newValues The new values of the grid.
     */
-  def updateGameGrid(newValues: Array[Array[Boolean]]): Unit = {
+  def updateGameGrid(newValues: Grid): Unit = {
     for (i <- gameGrid.indices; j <- gameGrid.head.indices) {
       gameGrid(i)(j) = newValues(i)(j)
     }

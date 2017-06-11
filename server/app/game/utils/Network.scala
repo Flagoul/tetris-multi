@@ -1,4 +1,4 @@
-package game
+package game.utils
 
 import akka.actor.ActorRef
 import play.api.libs.json.{JsBoolean, JsObject}

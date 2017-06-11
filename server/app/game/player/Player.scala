@@ -1,4 +1,4 @@
-package game
+package game.player
 
 import akka.actor.{ActorRef, PoisonPill}
 import models.User

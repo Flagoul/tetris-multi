@@ -4,6 +4,7 @@ import javax.inject.Inject
 
 import akka.actor.{Actor, ActorRef, ActorSystem, PoisonPill, Props}
 import akka.stream.Materializer
+import game.player.Player
 import managers.{ResultManager, SessionManager, UserManager}
 import models.User
 import play.api.Logger.logger

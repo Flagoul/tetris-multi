@@ -2,6 +2,7 @@ package tetris.game
 
 import org.scalajs.dom.html.Canvas
 import org.scalajs.dom.raw.CanvasRenderingContext2D
+import shared.Types.Grid
 
 /**
   * Represents a canvas containing a grid.
@@ -60,7 +61,7 @@ class GridCanvas(rows: Int, cols: Int, canvas: Canvas, gridColor: String = "#bbb
     *
     * @param content The content of the grid.
     */
-  def drawGridContent(content: Array[Array[Boolean]]): Unit = {
+  def drawGridContent(content: Grid): Unit = {
     val ctx = context2D
 
     val blockHeight = canvas.height.toFloat / rows - 1

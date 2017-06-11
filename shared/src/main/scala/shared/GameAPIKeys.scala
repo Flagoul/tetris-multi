@@ -1,5 +1,8 @@
 package shared
 
+/**
+  * Keys of values sent by the server to the player in a json object.
+  */
 object GameAPIKeys {
   val error = "error"
   val opponentUsername = "opponentUsername"
