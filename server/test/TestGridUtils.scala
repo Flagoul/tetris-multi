@@ -1,13 +1,16 @@
+import game.utils.GridUtils
 import org.scalatest.{BeforeAndAfter, FunSuite, PrivateMethodTester}
-import game.{Game, GameState, Player}
+import game.GameState
 import shared.GameRules.{nGameCols, nGameRows}
 
-class TestGame extends FunSuite with BeforeAndAfter with PrivateMethodTester {
-  val game = new Game(Player(null, null), Player(null, null), null)
+/**
+  * Tests fot the GridUtils functions.
+  */
+class TestGridUtils extends FunSuite with BeforeAndAfter with PrivateMethodTester {
   val state = new GameState()
-  val emptyGrid: Array[Array[Boolean]] = Array.ofDim[Boolean](nGameRows, nGameCols)
+  val emptyGrid: Grid = Array.ofDim[Boolean](nGameRows, nGameCols)
   val emptyRow: Array[Boolean] = Array.ofDim[Boolean](nGameCols)
-  var grid: Array[Array[Boolean]] = _
+  var grid: Grid = _
 
   val incompleteLine: Array[Boolean] = emptyRow.clone()
   incompleteLine(0) = true
@@ -20,7 +23,7 @@ class TestGame extends FunSuite with BeforeAndAfter with PrivateMethodTester {
     grid(nGameRows-1) = emptyRow.map(_ => true)
 
     state.updateGameGrid(grid)
-    val removed = game.removeCompletedLines(state)
+    val removed = GridUtils.removeCompletedLines(state)
 
     assert(removed.length == 1)
     assert(state.gameGrid(nGameRows-1).deep == emptyRow.deep)
@@ -34,7 +37,7 @@ class TestGame extends FunSuite with BeforeAndAfter with PrivateMethodTester {
 
     state.updateGameGrid(grid)
 
-    val removed = game.removeCompletedLines(state)
+    val removed = GridUtils.removeCompletedLines(state)
 
     assert(removed.length == 2)
     assert(state.gameGrid(nGameRows-4).deep == emptyRow.deep)

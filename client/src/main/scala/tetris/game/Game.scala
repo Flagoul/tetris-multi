@@ -3,11 +3,11 @@ package tetris.game
 import json._
 import org.scalajs.dom
 import org.scalajs.dom.WebSocket
-import org.scalajs.dom.raw.{HTMLButtonElement, HTMLDivElement, MessageEvent, MouseEvent}
+import org.scalajs.dom.raw._
 import shared.Actions._
 import shared.GameAPIKeys
 import shared.GameRules._
-import shared.Types.Position
+import shared.Types.{Grid, Position}
 
 import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel}
 
@@ -56,11 +56,31 @@ class Game {
     opponentGB.drawGame()
     opponentGB.drawNextPieceGrid()
 
-    readyButton.onclick = (_: MouseEvent) => sendAction(Start)
-
-    dom.window.onkeydown = (e: dom.KeyboardEvent) => handleKeyDown(e.keyCode)
+    readyButton.onclick = (_: MouseEvent) => sendAction(Ready)
 
     ws.onmessage = (e: MessageEvent) => handleMessage(JValue.fromString(e.data.toString))
+    ws.onclose = (_: CloseEvent) => {
+      error.innerHTML = "You have already the game open elsewhere. Please close this tab."
+      suppressLeaveWarning()
+    }
+
+    dom.window.onkeydown = (e: KeyboardEvent) => handleKeyDown(e.keyCode)
+    dom.window.onunload = (_: Event) => sendAction(Leave)
+  }
+
+  /**
+    * Activates the warning on page leave ("Are you sure to quit ?").
+    */
+  private def activateLeaveWarning(): Unit = {
+    // Trick to trigger the "do you really want to leave" prompt. If some text is returned, the prompt will appear.
+    dom.window.onbeforeunload = (_: dom.BeforeUnloadEvent) => {""}
+  }
+
+  /**
+    * Suppress the leave warning.
+    */
+  private def suppressLeaveWarning(): Unit = {
+    dom.window.onbeforeunload = null
   }
 
   /**
@@ -120,6 +140,8 @@ class Game {
 
     readyButton.style.display = "block"
     playerGB.setLayerText("")
+
+    activateLeaveWarning()
   }
 
   /**
@@ -152,6 +174,8 @@ class Game {
     opponentGB.showLayer()
     readyButton.style.display = "none"
     endButtons.style.display = "block"
+    suppressLeaveWarning()
+    ws.onclose = null
 
     if (wonExists(data)) {
       val winnerGB = if (getWonValue(data)) playerGB else opponentGB
@@ -257,7 +281,7 @@ class Game {
   private def getPiecePositionsValue(data: JValue): List[Position] = {
     data(GameAPIKeys.piecePositions).value.asInstanceOf[Seq[Seq[Int]]].map(l => (l.head, l.tail.head)).toList
   }
-  private def getGrid(data: JValue, key: String): Array[Array[Boolean]] = {
+  private def getGrid(data: JValue, key: String): Grid = {
     data(key).value.asInstanceOf[Seq[Seq[Boolean]]].map(_.toArray).toArray
   }
 }
