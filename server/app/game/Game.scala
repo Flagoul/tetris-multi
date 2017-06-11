@@ -363,7 +363,7 @@ class Game(p1: Player, p2: Player, gameManager: GameManager) {
       state.updateGameGrid(state.gameGrid.drop(toPush.length).map(_.clone) ++ toPush)
 
       while (piece.wouldCollideIfAddedToGrid()) {
-        if (!piece.moveUpWithOnlyGridCheck(updateGridOnMove = false)) {
+        if (!piece.moveUpWithOnlyGridBoundsCheck(updateGridOnMove = false)) {
           return true
         }
       }
