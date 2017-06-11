@@ -154,7 +154,7 @@ case class GameManager(results: ResultManager) {
       val player = players(id)
       val opponent = if (player == lobby.player1) lobby.player2 else lobby.player1
 
-      Network.broadcast(player.out, opponent.out, Json.obj(GameAPIKeys.ready -> true))
+      Network.broadcastWithOpponent(player.out, opponent.out, Json.obj(GameAPIKeys.ready -> true))
 
       if (lobby.everyoneReady()) {
         val game = createGame(lobby.player1, lobby.player2)

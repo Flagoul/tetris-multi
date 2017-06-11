@@ -5,7 +5,7 @@ import play.api.libs.json.{JsBoolean, JsObject}
 import shared.GameAPIKeys
 
 object Network {
-  def broadcast(dest1: ActorRef, dest2: ActorRef, data: JsObject): Unit = {
+  def broadcastWithOpponent(dest1: ActorRef, dest2: ActorRef, data: JsObject): Unit = {
     dest1 ! (data + (GameAPIKeys.opponent -> JsBoolean(false))).toString()
     dest2 ! (data + (GameAPIKeys.opponent -> JsBoolean(true))).toString()
   }
