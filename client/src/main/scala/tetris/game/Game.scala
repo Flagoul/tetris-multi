@@ -60,7 +60,7 @@ class Game {
 
     ws.onmessage = (e: MessageEvent) => handleMessage(JValue.fromString(e.data.toString))
     ws.onclose = (_: CloseEvent) => {
-      error.innerHTML = "You have already the game open elsewhere. Please close this tab."
+      error.innerHTML = "You were disconnected from the server. You may close this tab."
       suppressLeaveWarning()
     }
 
