@@ -3,8 +3,6 @@ package game
 /**
   * A lobby where players are put when matched together before they begin to play.
   *
-  * It monitors players leaving with a timeout.
-  *
   * @param player1 The first player.
   * @param player2 The second player.
   */
