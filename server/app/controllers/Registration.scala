@@ -52,7 +52,6 @@ class Registration @Inject()(users: UserManager, val sessions: SessionManager, v
             sessions.registerSession(user.id.get).map(session => Redirect("/").withSession(session))
           )
           .recover({
-            // FIXME : wrap this at the Manager level
             case exception: SQLIntegrityConstraintViolationException =>
               if (exception.getMessage.contains("Duplicate") && exception.getMessage.contains("username")) {
                 BadRequest(views.html.registration(form.withError("username", "This username is already taken")))

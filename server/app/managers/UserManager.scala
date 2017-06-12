@@ -43,7 +43,6 @@ class UserManager @Inject()(val appProvider: Provider[Application])
     * @return the user inserted with its new id
     */
   override def create(u: User): Future[User] = super.create(u.copy(password =
-    // FIXME : salt round should be put in configuration
     BCrypt.hashpw(u.password, BCrypt.gensalt(12))))
 
   /**

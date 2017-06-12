@@ -39,9 +39,5 @@ case class Lobby(player1: Player, player2: Player) {
     *
     * @param id The id of the player.
     */
-  def setReady(id: Long): Unit = {
-    val player = players(id)
-    player.isReady = true
-    println(id + " is ready")
-  }
+  def setReady(id: Long): Unit = players(id).isReady = true
 }
