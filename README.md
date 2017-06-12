@@ -42,6 +42,8 @@ You then spawn your application like that :
 
 **Warning**: This takes a lot of time since it needs to install scala and sbt, download the dependencies and then build the project. You also need at least 2GB of free RAM for the build to be successful.
 
+After the dockers have been started, you can access the app at `${YOUR_HOST}:${TETRIS_PORT}`.
+
 ### Deploying manually
 
 This application requires a MySQL Database. The configuration of the database is not 
