@@ -8,17 +8,38 @@ The frontend uses ScalaJS and the backend is made with play and uses Slick with 
 ## Rules
 The game follows the same rules for tetris in one player: a random piece is falling down and can be rotated in order to complete rows, that are then erased from the game grid. If the piece touches the upper bound of the game grid, the player loses.
 
-Additionnally, the following rules apply:
+Additionally, the following rules apply:
 - When n lines are completed, n - 1 lines are added at the bottom to the opponent grid, except for 4 lines where 4 are added.
 - When a player completes a line, the game speed increases for both players.
 - The number of points is computed according to the spaces above the piece placed, the rows completed when doing so and the game speed.
 
 ## Deploying the app
 
+The simplest way of deploying the app is by using the provided docker-compose file, which
+will setup MySQL and everything else for you.
+
+If you don't want to use the provided Dockerfile, please refer to [Play's documentation](https://www.playframework.com/documentation/2.5.x/Production)
+on how to deploy an app to production.
+
 ### Requirements
-- Docker-compose
+- Docker-compose version 1.9+
+- Docker version version 1.12+
+
+Please refer to [the official installation guide](https://docs.docker.com/engine/installation/) for instruciton on how to install them.
 
 ### Deployment
+
+Multiple environment variables are available to configure your application.
+
+- TETRIS_DB_PASSWORD : this is the password your MySQL database will use.
+- TETRIS_SECRET : the secret Play will use to encrypt sessions and tokens.
+- TETRIS_PORT : the port on which to export your application. Defaults to 9000.
+
+
+You then spawn your application like that : 
+
+    TETRIS_DB_PASSWORD=YOUR_PASSWORD TETRIS_SECRET=YOUR_SECRET docker-compose up
+
 
 ## Authors
 [Benjamin Schubert](https://github.com/BenjaminSchubert/) and [Basile Vu](https://github.com/Flagoul/)
