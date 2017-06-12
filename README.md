@@ -40,6 +40,7 @@ You then spawn your application like that :
 
     TETRIS_DB_PASSWORD=YOUR_PASSWORD TETRIS_SECRET=YOUR_SECRET docker-compose up
 
+**Warning**: This takes a lot of time since it needs to install scala and sbt, download the dependencies and then build the project. You also need at least 2GB of free RAM for the build to be successful.
 
 ### Deploying manually
 
