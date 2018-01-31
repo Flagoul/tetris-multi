@@ -70,4 +70,4 @@ deployed.
 
 If you need more references, please look at [images/scala/runserver.sh](images/scala/runserver.sh) to how we run the server.
 ## Authors
-[Benjamin Schubert](https://github.com/BenjaminSchubert/) and [Basile Vu](https://github.com/Flagoul/)
+[Benjamin Schubert](https://github.com/BenjaminSchubert/) and [Basile Vu](https://github.com/BasileVu/)
